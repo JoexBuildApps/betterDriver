@@ -22,7 +22,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.joexbiildapps.DriveCoach"
+      "package": "com.joexbiildapps.DriveCoach",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "WAKE_LOCK"
+      ]
     },
     "web": {
       "output": "static",
@@ -30,6 +36,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-av",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "DriveCoach necesita tu ubicacion para detectar la velocidad y los limites de velocidad."
+        }
+      ],
       [
         "expo-splash-screen",
         {
