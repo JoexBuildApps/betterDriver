@@ -8,6 +8,7 @@ import { calcularPenalizacion, guardarViaje, Evento } from '../../utils/viajes';
 
 const VELOCIDAD_MINIMA = 3;
 const TIEMPO_NUEVO_VIAJE = 2 * 60 * 1000;
+const TOLERANCIA = 1.05;
 
 export default function Conducir() {
   const [velocidad, setVelocidad] = useState(0);
@@ -82,7 +83,7 @@ export default function Conducir() {
           const limiteActual = await getLimite(latitude, longitude);
           setLimite(limiteActual);
 
-          if (kmh > limiteActual) {
+          if (kmh > limiteActual * TOLERANCIA) {
             const pen = calcularPenalizacion(kmh, limiteActual);
             puntosRef.current = Math.max(0, puntosRef.current - pen);
             setPuntos(puntosRef.current);
@@ -105,14 +106,14 @@ export default function Conducir() {
   }, [viajeActivo]);
 
   const getColor = () => {
-    if (velocidad > limite) return '#ff3b30';
-    if (velocidad > limite * 0.85) return '#ff9500';
+    if (velocidad > limite * TOLERANCIA) return '#ff3b30';
+    if (velocidad > limite) return '#ff9500';
     return '#30d158';
   };
 
   const getEstado = () => {
-    if (velocidad > limite) return 'Exceso de velocidad';
-    if (velocidad > limite * 0.85) return 'Precaucion';
+    if (velocidad > limite * TOLERANCIA) return 'Exceso de velocidad';
+    if (velocidad > limite) return 'Precaucion';
     return velocidad === 0 ? 'Detenido' : 'Velocidad normal';
   };
 
