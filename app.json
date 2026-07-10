@@ -1,15 +1,14 @@
 {
   "expo": {
-    "name": "DriveCoach",
-    "slug": "DriveCoach",
+    "name": "betterDriver",
+    "slug": "betterDriver",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "drivecoach",
+    "scheme": "betterdriver",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.joexbiildapps.DriveCoach",
+      "bundleIdentifier": "com.joexbiildapps.betterDriver",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -22,7 +21,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.joexbiildapps.DriveCoach",
+      "package": "com.joexbiildapps.betterDriver",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -40,20 +39,27 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "DriveCoach necesita tu ubicacion para detectar la velocidad y los limites de velocidad."
+          "locationAlwaysAndWhenInUsePermission": "betterDriver necesita tu ubicacion para detectar la velocidad y los limites de velocidad."
         }
+      ],
+      [
+        "expo-speech",
+        {}
+      ],
+      [
+        "expo-keep-awake",
+        {}
       ],
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#000000",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
           }
         }
-      ],
-      "expo-audio"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,14 +1,23 @@
 import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
+import * as Speech from 'expo-speech';
 import { useAudioPlayer } from 'expo-audio';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLimite } from '../../utils/velocidadCache';
 import { calcularPenalizacion, guardarViaje, Evento } from '../../utils/viajes';
+import { mensajeAleatorio } from '../../utils/mensajes';
 
-const VELOCIDAD_MINIMA = 3;
+const VELOCIDAD_MINIMA = 8;
 const TIEMPO_NUEVO_VIAJE = 2 * 60 * 1000;
-const TOLERANCIA = 1.05;
+const GRACIA_SEGUNDOS = 7;
+
+function getTolerancia(limite: number): number {
+  if (limite <= 30) return 1.10;
+  if (limite <= 60) return 1.07;
+  return 1.05;
+}
 
 export default function Conducir() {
   const [velocidad, setVelocidad] = useState(0);
@@ -16,21 +25,32 @@ export default function Conducir() {
   const [puntos, setPuntos] = useState(1000);
   const [topSpeed, setTopSpeed] = useState(0);
   const [viajeActivo, setViajeActivo] = useState(false);
+  const [mensaje, setMensaje] = useState('');
   const [perfil, setPerfil] = useState<any>(null);
 
   const alertaActiva = useRef(false);
   const timerParado = useRef<any>(null);
+  const timerGracia = useRef<any>(null);
+  const enGracia = useRef(false);
+  const timerPerfecto = useRef<any>(null);
   const inicioViaje = useRef<number>(Date.now());
   const eventosViaje = useRef<Evento[]>([]);
   const puntosRef = useRef(1000);
-
   const player = useAudioPlayer({ uri: 'https://www.soundjay.com/buttons/sounds/beep-01a.mp3' });
 
   useEffect(() => {
+    
     AsyncStorage.getItem('perfil').then(p => {
       if (p) setPerfil(JSON.parse(p));
     });
+    
   }, []);
+
+  const hablar = (texto: string) => {
+    setMensaje(texto);
+    Speech.speak(texto, { language: 'es' });
+    setTimeout(() => setMensaje(''), 6000);
+  };
 
   const terminarViaje = async () => {
     const duracion = Math.round((Date.now() - inicioViaje.current) / 1000);
@@ -47,6 +67,8 @@ export default function Conducir() {
     eventosViaje.current = [];
     inicioViaje.current = Date.now();
     setViajeActivo(false);
+    if (timerGracia.current) clearTimeout(timerGracia.current);
+    if (timerPerfecto.current) clearTimeout(timerPerfecto.current);
   };
 
   useEffect(() => {
@@ -82,21 +104,56 @@ export default function Conducir() {
 
           const limiteActual = await getLimite(latitude, longitude);
           setLimite(limiteActual);
+          const tolerancia = getTolerancia(limiteActual);
 
-          if (kmh > limiteActual * TOLERANCIA) {
-            const pen = calcularPenalizacion(kmh, limiteActual);
-            puntosRef.current = Math.max(0, puntosRef.current - pen);
-            setPuntos(puntosRef.current);
-            eventosViaje.current.push({
-              tipo: 'exceso',
-              timestamp: Date.now(),
-              velocidad: kmh,
-              limite: limiteActual,
-            });
-            if (!alertaActiva.current) {
-              alertaActiva.current = true;
-              player.play();
-              setTimeout(() => { alertaActiva.current = false; }, 5000);
+          if (kmh > limiteActual * tolerancia) {
+            // cancelar timer de conducción perfecta
+            if (timerPerfecto.current) {
+              clearTimeout(timerPerfecto.current);
+              timerPerfecto.current = null;
+            }
+
+            if (!enGracia.current && !timerGracia.current) {
+              // iniciar período de gracia
+              enGracia.current = true;
+              timerGracia.current = setTimeout(() => {
+                // después de 7 segundos empieza a descontar
+                timerGracia.current = null;
+                enGracia.current = false;
+              }, GRACIA_SEGUNDOS * 1000);
+            } else if (!enGracia.current) {
+              // ya pasó la gracia, descontar puntos
+              const pen = calcularPenalizacion(kmh, limiteActual);
+              puntosRef.current = Math.max(0, puntosRef.current - pen);
+              setPuntos(puntosRef.current);
+              eventosViaje.current.push({
+                tipo: 'exceso',
+                timestamp: Date.now(),
+                velocidad: kmh,
+                limite: limiteActual,
+              });
+
+              if (!alertaActiva.current) {
+                alertaActiva.current = true;
+                player.play();
+                hablar(mensajeAleatorio('exceso'));
+                setTimeout(() => { alertaActiva.current = false; }, 8000);
+              }
+            }
+          } else {
+            // dentro del límite — resetear gracia
+            if (timerGracia.current) {
+              clearTimeout(timerGracia.current);
+              timerGracia.current = null;
+            }
+            enGracia.current = false;
+
+            // iniciar timer de conducción perfecta (5 minutos)
+            if (!timerPerfecto.current && kmh > 0) {
+              timerPerfecto.current = setTimeout(() => {
+                hablar(mensajeAleatorio('perfecto'));
+                timerPerfecto.current = null;
+              }, 5 * 60 * 1000);
             }
           }
         }
@@ -106,14 +163,16 @@ export default function Conducir() {
   }, [viajeActivo]);
 
   const getColor = () => {
-    if (velocidad > limite * TOLERANCIA) return '#ff3b30';
+    const tolerancia = getTolerancia(limite);
+    if (velocidad > limite * tolerancia) return '#ff3b30';
     if (velocidad > limite) return '#ff9500';
     return '#30d158';
   };
 
   const getEstado = () => {
-    if (velocidad > limite * TOLERANCIA) return 'Exceso de velocidad';
-    if (velocidad > limite) return 'Precaucion';
+    const tolerancia = getTolerancia(limite);
+    if (velocidad > limite * tolerancia) return 'Exceso de velocidad';
+    if (velocidad > limite) return 'Precaución';
     return velocidad === 0 ? 'Detenido' : 'Velocidad normal';
   };
 
@@ -127,7 +186,7 @@ export default function Conducir() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.infoText}>
-          {perfil ? `${perfil.nombre} · ${perfil.marca}` : 'DriveCoach'}
+          {perfil ? `${perfil.nombre} · ${perfil.marca}` : 'betterDriver'}
         </Text>
         <Text style={styles.infoText}>Top: {topSpeed} km/h</Text>
       </View>
@@ -136,24 +195,15 @@ export default function Conducir() {
         Puntos: <Text style={{ color: getColorPuntos() }}>{puntos}</Text>
       </Text>
 
-      <Text style={styles.limite}>Limite: {limite} km/h</Text>
+      <Text style={styles.limite}>Límite: {limite} km/h</Text>
       <Text style={[styles.velocidad, { color: getColor() }]}>{velocidad}</Text>
       <Text style={styles.unidad}>km/h</Text>
       <Text style={[styles.estado, { color: getColor() }]}>{getEstado()}</Text>
 
-      <View style={styles.botones}>
-        <TouchableOpacity style={styles.btn} onPress={() => setVelocidad(v => Math.max(0, v - 10))}>
-          <Text style={styles.btnTexto}>-10</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.btn} onPress={() => setVelocidad(v => v + 10)}>
-          <Text style={styles.btnTexto}>+10</Text>
-        </TouchableOpacity>
-      </View>
-
-      {viajeActivo && (
-        <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
-          <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
-        </TouchableOpacity>
+      {mensaje !== '' && (
+        <View style={styles.mensajeContainer}>
+          <Text style={styles.mensajeTexto}>{mensaje}</Text>
+        </View>
       )}
     </View>
   );
@@ -168,9 +218,6 @@ const styles = StyleSheet.create({
   velocidad: { fontSize: 120, fontWeight: 'bold' },
   unidad: { fontSize: 24, color: '#888', marginTop: -10 },
   estado: { fontSize: 18, marginTop: 16, fontWeight: '500' },
-  botones: { flexDirection: 'row', gap: 20, marginTop: 40 },
-  btn: { backgroundColor: '#222', paddingHorizontal: 30, paddingVertical: 15, borderRadius: 12 },
-  btnTexto: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  btnTerminar: { marginTop: 30, borderColor: '#555', borderWidth: 1, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 },
-  btnTerminarTexto: { color: '#555', fontSize: 14 },
+  mensajeContainer: { position: 'absolute', bottom: 100, left: 20, right: 20, backgroundColor: '#111', borderRadius: 12, padding: 16 },
+  mensajeTexto: { color: '#fff', fontSize: 15, textAlign: 'center', lineHeight: 22 },
 });
