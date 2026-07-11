@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Animated } from 'react-native';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { useAudioPlayer } from 'expo-audio';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLimite } from '../../utils/velocidadCache';
 import { calcularPenalizacion, guardarViaje, Evento } from '../../utils/viajes';
@@ -52,9 +53,11 @@ export default function Conducir() {
   const player = useAudioPlayer({ uri: 'https://www.soundjay.com/buttons/sounds/beep-01a.mp3' });
 
   useEffect(() => {
+    activateKeepAwakeAsync();
     AsyncStorage.getItem('perfil').then(p => {
       if (p) setPerfil(JSON.parse(p));
     });
+    return () => deactivateKeepAwake();
   }, []);
 
   const flashearTop = () => {
