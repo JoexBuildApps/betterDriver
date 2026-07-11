@@ -4,6 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 
+const C = {
+  fondo: '#0a1628',
+  marca: '#4fc3f7',
+  blanco: '#ffffff',
+  gris: '#607d8b',
+  superficie: '#0f1f3a',
+  verde: '#30d158',
+};
+
 export default function Onboarding() {
   const [nombre, setNombre] = useState('');
   const [marca, setMarca] = useState('');
@@ -43,8 +52,15 @@ export default function Onboarding() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.inner}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.marca}>betterDriver</Text>
 
         <View style={styles.progreso}>
           {[1,2,3].map(n => (
@@ -54,12 +70,12 @@ export default function Onboarding() {
 
         {paso === 1 && (
           <View style={styles.paso}>
-            <Text style={styles.titulo}>Bienvenido a{'\n'}betterDriver</Text>
-            <Text style={styles.subtitulo}>Como te llamas?</Text>
+            <Text style={styles.titulo}>Bienvenido</Text>
+            <Text style={styles.subtitulo}>La abuela va contigo. ¿Cómo te llamas?</Text>
             <TextInput
               style={styles.input}
               placeholder="Tu nombre o apodo"
-              placeholderTextColor="#555"
+              placeholderTextColor={C.gris}
               value={nombre}
               onChangeText={setNombre}
               autoFocus
@@ -76,12 +92,12 @@ export default function Onboarding() {
 
         {paso === 2 && (
           <View style={styles.paso}>
-            <Text style={styles.titulo}>Tu vehiculo</Text>
-            <Text style={styles.subtitulo}>Que carro manejas?</Text>
+            <Text style={styles.titulo}>Tu vehículo</Text>
+            <Text style={styles.subtitulo}>¿Qué carro manejas?</Text>
             <TextInput
               style={styles.input}
               placeholder="Marca (ej. Audi, Ford, Toyota)"
-              placeholderTextColor="#555"
+              placeholderTextColor={C.gris}
               value={marca}
               onChangeText={setMarca}
               autoFocus
@@ -89,14 +105,14 @@ export default function Onboarding() {
             <TextInput
               style={styles.input}
               placeholder="Modelo (ej. A3, F-150, Corolla)"
-              placeholderTextColor="#555"
+              placeholderTextColor={C.gris}
               value={modelo}
               onChangeText={setModelo}
             />
             <TextInput
               style={styles.input}
               placeholder="Año (ej. 2021)"
-              placeholderTextColor="#555"
+              placeholderTextColor={C.gris}
               value={anio}
               onChangeText={setAnio}
               keyboardType="numeric"
@@ -115,20 +131,20 @@ export default function Onboarding() {
         {paso === 3 && (
           <View style={styles.paso}>
             <Text style={styles.titulo}>Tu ciudad</Text>
-            <Text style={styles.subtitulo}>Detectando tu ubicacion...</Text>
+            <Text style={styles.subtitulo}>Detectando tu ubicación...</Text>
             {detectandoCiudad ? (
-              <ActivityIndicator color="#30d158" style={{ marginVertical: 20 }} />
+              <ActivityIndicator color={C.marca} style={{ marginVertical: 20 }} />
             ) : (
               <TextInput
                 style={styles.input}
                 placeholder="Ciudad"
-                placeholderTextColor="#555"
+                placeholderTextColor={C.gris}
                 value={ciudad}
                 onChangeText={setCiudad}
               />
             )}
             <TouchableOpacity
-              style={[styles.btn, !ciudad.trim() && styles.btnDesactivado]}
+              style={[styles.btn, (!ciudad.trim() || detectandoCiudad) && styles.btnDesactivado]}
               onPress={finalizar}
               disabled={!ciudad.trim() || detectandoCiudad}
             >
@@ -143,16 +159,25 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: C.fondo },
   inner: { flexGrow: 1, padding: 24, justifyContent: 'center' },
-  progreso: { flexDirection: 'row', gap: 8, marginBottom: 48, justifyContent: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#333' },
-  dotActivo: { backgroundColor: '#30d158' },
+  marca: { color: C.marca, fontSize: 26, fontWeight: '600', textAlign: 'center', marginBottom: 32, letterSpacing: 1 },
+  progreso: { flexDirection: 'row', gap: 8, marginBottom: 40, justifyContent: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.superficie },
+  dotActivo: { backgroundColor: C.marca },
   paso: { gap: 16 },
-  titulo: { fontSize: 32, fontWeight: 'bold', color: '#fff', lineHeight: 40 },
-  subtitulo: { fontSize: 16, color: '#888', marginBottom: 8 },
-  input: { backgroundColor: '#111', color: '#fff', fontSize: 18, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#222' },
-  btn: { backgroundColor: '#30d158', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
-  btnDesactivado: { backgroundColor: '#1a3d22' },
-  btnTexto: { color: '#000', fontSize: 16, fontWeight: 'bold' },
+  titulo: { fontSize: 28, fontWeight: 'bold', color: C.blanco },
+  subtitulo: { fontSize: 15, color: C.gris, marginBottom: 8 },
+  input: {
+    backgroundColor: C.superficie,
+    color: C.blanco,
+    fontSize: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1a3050',
+  },
+  btn: { backgroundColor: C.marca, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  btnDesactivado: { backgroundColor: C.superficie },
+  btnTexto: { color: C.fondo, fontSize: 16, fontWeight: 'bold' },
 });

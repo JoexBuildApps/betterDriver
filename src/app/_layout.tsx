@@ -7,12 +7,16 @@ export default function RootLayout() {
   const [listo, setListo] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem('perfil').then(perfil => {
+    (async () => {
+      const eula = await AsyncStorage.getItem('eulaAceptado');
+      const perfil = await AsyncStorage.getItem('perfil');
       setListo(true);
-      if (!perfil) {
+      if (!eula) {
+        router.replace('/eula');
+      } else if (!perfil) {
         router.replace('/onboarding');
       }
-    });
+    })();
   }, []);
 
   if (!listo) return <View style={{ flex: 1, backgroundColor: '#0a1628' }} />;
@@ -21,6 +25,7 @@ export default function RootLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
+      <Stack.Screen name="eula" />
     </Stack>
   );
 }
