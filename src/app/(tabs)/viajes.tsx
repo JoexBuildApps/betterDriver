@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, FlatList } from 'react-native';
 import { getViajes, Viaje, formatearFecha, formatearDuracion } from '../../utils/viajes';
 
 const colorScore: Record<Viaje['score'], string> = {
-  Excelente: '#30d158',
-  Bueno: '#ff9500',
-  Regular: '#ff9500',
-  Peligroso: '#ff3b30',
+  'Lento pero seguro': '#30d158',
+  'Esto es lo que se espera de ti': '#ff9500',
+  'En construccion': '#ff9500',
+  'Te regalaron el pase': '#ff3b30',
 };
 
 export default function Viajes() {

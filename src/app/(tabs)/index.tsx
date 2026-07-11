@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Animated } from 'react-native';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { useAudioPlayer } from 'expo-audio';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLimite } from '../../utils/velocidadCache';
 import { calcularPenalizacion, guardarViaje, Evento } from '../../utils/viajes';
@@ -12,6 +11,17 @@ import { mensajeAleatorio } from '../../utils/mensajes';
 const VELOCIDAD_MINIMA = 8;
 const TIEMPO_NUEVO_VIAJE = 2 * 60 * 1000;
 const GRACIA_SEGUNDOS = 7;
+
+const C = {
+  fondo: '#0a1628',
+  marca: '#4fc3f7',
+  blanco: '#ffffff',
+  amarillo: '#ffd60a',
+  rojo: '#ff3b30',
+  verde: '#30d158',
+  gris: '#607d8b',
+  superficie: '#0f1f3a',
+};
 
 function getTolerancia(limite: number): number {
   if (limite <= 30) return 1.10;
@@ -24,27 +34,43 @@ export default function Conducir() {
   const [limite, setLimite] = useState(20);
   const [puntos, setPuntos] = useState(1000);
   const [topSpeed, setTopSpeed] = useState(0);
+  const [alertaTop, setAlertaTop] = useState(false);
   const [viajeActivo, setViajeActivo] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [perfil, setPerfil] = useState<any>(null);
 
+  const flashAnim = useRef(new Animated.Value(1)).current;
   const alertaActiva = useRef(false);
   const timerParado = useRef<any>(null);
   const timerGracia = useRef<any>(null);
   const enGracia = useRef(false);
   const timerPerfecto = useRef<any>(null);
+  const timerAlertaTop = useRef<any>(null);
   const inicioViaje = useRef<number>(Date.now());
   const eventosViaje = useRef<Evento[]>([]);
   const puntosRef = useRef(1000);
   const player = useAudioPlayer({ uri: 'https://www.soundjay.com/buttons/sounds/beep-01a.mp3' });
 
   useEffect(() => {
-    
     AsyncStorage.getItem('perfil').then(p => {
       if (p) setPerfil(JSON.parse(p));
     });
-    
   }, []);
+
+  const flashearTop = () => {
+    setAlertaTop(true);
+    if (timerAlertaTop.current) clearTimeout(timerAlertaTop.current);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(flashAnim, { toValue: 0.2, duration: 300, useNativeDriver: true }),
+        Animated.timing(flashAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]),
+      { iterations: 5 }
+    ).start(() => {
+      flashAnim.setValue(1);
+    });
+    timerAlertaTop.current = setTimeout(() => setAlertaTop(false), 3500);
+  };
 
   const hablar = (texto: string) => {
     setMensaje(texto);
@@ -64,6 +90,7 @@ export default function Conducir() {
     setPuntos(1000);
     puntosRef.current = 1000;
     setTopSpeed(0);
+    setAlertaTop(false);
     eventosViaje.current = [];
     inicioViaje.current = Date.now();
     setViajeActivo(false);
@@ -88,7 +115,13 @@ export default function Conducir() {
 
           if (kmh > 0) {
             setViajeActivo(true);
-            setTopSpeed(prev => Math.max(prev, kmh));
+            setTopSpeed(prev => {
+              if (kmh > prev) {
+                flashearTop();
+                return kmh;
+              }
+              return prev;
+            });
             if (timerParado.current) {
               clearTimeout(timerParado.current);
               timerParado.current = null;
@@ -107,22 +140,17 @@ export default function Conducir() {
           const tolerancia = getTolerancia(limiteActual);
 
           if (kmh > limiteActual * tolerancia) {
-            // cancelar timer de conducción perfecta
             if (timerPerfecto.current) {
               clearTimeout(timerPerfecto.current);
               timerPerfecto.current = null;
             }
-
             if (!enGracia.current && !timerGracia.current) {
-              // iniciar período de gracia
               enGracia.current = true;
               timerGracia.current = setTimeout(() => {
-                // después de 7 segundos empieza a descontar
                 timerGracia.current = null;
                 enGracia.current = false;
               }, GRACIA_SEGUNDOS * 1000);
             } else if (!enGracia.current) {
-              // ya pasó la gracia, descontar puntos
               const pen = calcularPenalizacion(kmh, limiteActual);
               puntosRef.current = Math.max(0, puntosRef.current - pen);
               setPuntos(puntosRef.current);
@@ -132,7 +160,6 @@ export default function Conducir() {
                 velocidad: kmh,
                 limite: limiteActual,
               });
-
               if (!alertaActiva.current) {
                 alertaActiva.current = true;
                 player.play();
@@ -141,14 +168,11 @@ export default function Conducir() {
               }
             }
           } else {
-            // dentro del límite — resetear gracia
             if (timerGracia.current) {
               clearTimeout(timerGracia.current);
               timerGracia.current = null;
             }
             enGracia.current = false;
-
-            // iniciar timer de conducción perfecta (5 minutos)
             if (!timerPerfecto.current && kmh > 0) {
               timerPerfecto.current = setTimeout(() => {
                 hablar(mensajeAleatorio('perfecto'));
@@ -162,11 +186,11 @@ export default function Conducir() {
     return () => suscripcion?.remove();
   }, [viajeActivo]);
 
-  const getColor = () => {
+  const getColorVelocidad = () => {
     const tolerancia = getTolerancia(limite);
-    if (velocidad > limite * tolerancia) return '#ff3b30';
-    if (velocidad > limite) return '#ff9500';
-    return '#30d158';
+    if (velocidad > limite * tolerancia) return C.rojo;
+    if (velocidad > limite) return C.amarillo;
+    return C.blanco;
   };
 
   const getEstado = () => {
@@ -176,48 +200,172 @@ export default function Conducir() {
     return velocidad === 0 ? 'Detenido' : 'Velocidad normal';
   };
 
+  const getColorEstado = () => {
+    const tolerancia = getTolerancia(limite);
+    if (velocidad > limite * tolerancia) return C.rojo;
+    if (velocidad > limite) return C.amarillo;
+    return C.gris;
+  };
+
   const getColorPuntos = () => {
-    if (puntos >= 900) return '#30d158';
-    if (puntos >= 700) return '#ff9500';
-    return '#ff3b30';
+    if (puntos >= 900) return C.verde;
+    if (puntos >= 700) return C.amarillo;
+    return C.rojo;
   };
 
   return (
     <View style={styles.container}>
+
+      <Text style={styles.marca}>betterDriver</Text>
+
       <View style={styles.header}>
-        <Text style={styles.infoText}>
-          {perfil ? `${perfil.nombre} · ${perfil.marca}` : 'betterDriver'}
-        </Text>
-        <Text style={styles.infoText}>Top: {topSpeed} km/h</Text>
+        <View>
+          <Text style={styles.headerLabel}>puntos</Text>
+          <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntos}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={[styles.headerLabel, alertaTop && { color: C.rojo }]}>
+            {alertaTop ? '⚠ alerta' : 'top speed'}
+          </Text>
+          <Animated.Text style={[
+            styles.headerValor,
+            alertaTop && { color: C.rojo },
+            { opacity: alertaTop ? flashAnim : 1 }
+          ]}>
+            {topSpeed} km/h
+          </Animated.Text>
+        </View>
       </View>
 
-      <Text style={styles.puntos}>
-        Puntos: <Text style={{ color: getColorPuntos() }}>{puntos}</Text>
-      </Text>
+      <View style={styles.velocimetro}>
+        <Text style={[styles.velocidadNumero, { color: getColorVelocidad() }]}>{velocidad}</Text>
+        <Text style={styles.unidad}>km/h</Text>
+      </View>
 
-      <Text style={styles.limite}>Límite: {limite} km/h</Text>
-      <Text style={[styles.velocidad, { color: getColor() }]}>{velocidad}</Text>
-      <Text style={styles.unidad}>km/h</Text>
-      <Text style={[styles.estado, { color: getColor() }]}>{getEstado()}</Text>
+      <View style={styles.limiteContainer}>
+        <View style={styles.limiteBadge}>
+          <Text style={styles.limiteBadgeTexto}>{limite}</Text>
+        </View>
+        <Text style={styles.limiteLabel}>límite de zona</Text>
+      </View>
+
+      <Text style={[styles.estado, { color: getColorEstado() }]}>{getEstado()}</Text>
 
       {mensaje !== '' && (
         <View style={styles.mensajeContainer}>
           <Text style={styles.mensajeTexto}>{mensaje}</Text>
         </View>
       )}
+
+      {perfil && (
+        <Text style={styles.perfilTexto}>
+          {perfil.nombre} · {perfil.marca} {perfil.modelo}
+        </Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
-  header: { position: 'absolute', top: 50, flexDirection: 'row', justifyContent: 'space-between', width: '90%' },
-  infoText: { fontSize: 14, color: '#555' },
-  puntos: { fontSize: 16, color: '#555', marginBottom: 16 },
-  limite: { fontSize: 16, color: '#555', marginBottom: 8 },
-  velocidad: { fontSize: 120, fontWeight: 'bold' },
-  unidad: { fontSize: 24, color: '#888', marginTop: -10 },
-  estado: { fontSize: 18, marginTop: 16, fontWeight: '500' },
-  mensajeContainer: { position: 'absolute', bottom: 100, left: 20, right: 20, backgroundColor: '#111', borderRadius: 12, padding: 16 },
-  mensajeTexto: { color: '#fff', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  container: {
+    flex: 1,
+    backgroundColor: C.fondo,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  marca: {
+    position: 'absolute',
+    top: 55,
+    color: C.marca,
+    fontSize: 26,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  header: {
+    position: 'absolute',
+    top: 100,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
+  },
+  headerLabel: {
+    color: C.gris,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  headerValor: {
+    color: C.blanco,
+    fontSize: 22,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  velocimetro: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  velocidadNumero: {
+    fontSize: 160,
+    fontWeight: '200',
+    lineHeight: 170,
+    letterSpacing: -6,
+  },
+  unidad: {
+    color: C.gris,
+    fontSize: 22,
+    letterSpacing: 3,
+    marginTop: -12,
+  },
+  limiteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 20,
+  },
+  limiteBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 3,
+    borderColor: C.blanco,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  limiteBadgeTexto: {
+    color: C.blanco,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  limiteLabel: {
+    color: C.gris,
+    fontSize: 14,
+  },
+  estado: {
+    fontSize: 13,
+    marginTop: 14,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  mensajeContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: C.superficie,
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: C.marca,
+  },
+  mensajeTexto: {
+    color: C.blanco,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  perfilTexto: {
+    position: 'absolute',
+    bottom: 160,
+    color: C.gris,
+    fontSize: 12,
+  },
 });

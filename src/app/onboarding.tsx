@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
-
-const CIUDADES = ['Bogota', 'Medellin', 'Cali', 'Barranquilla', 'Otra'];
 
 export default function Onboarding() {
   const [nombre, setNombre] = useState('');
@@ -12,6 +11,29 @@ export default function Onboarding() {
   const [anio, setAnio] = useState('');
   const [ciudad, setCiudad] = useState('');
   const [paso, setPaso] = useState(1);
+  const [detectandoCiudad, setDetectandoCiudad] = useState(false);
+
+  useEffect(() => {
+    if (paso === 3) detectarCiudad();
+  }, [paso]);
+
+  const detectarCiudad = async () => {
+    setDetectandoCiudad(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({});
+      const resultado = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      if (resultado.length > 0) {
+        const r = resultado[0];
+        setCiudad(r.city || r.subregion || r.region || '');
+      }
+    } catch (e) {}
+    setDetectandoCiudad(false);
+  };
 
   const siguiente = () => setPaso(p => p + 1);
 
@@ -32,7 +54,7 @@ export default function Onboarding() {
 
         {paso === 1 && (
           <View style={styles.paso}>
-            <Text style={styles.titulo}>Bienvenido a{'\n'}DriveCoach</Text>
+            <Text style={styles.titulo}>Bienvenido a{'\n'}betterDriver</Text>
             <Text style={styles.subtitulo}>Como te llamas?</Text>
             <TextInput
               style={styles.input}
@@ -93,22 +115,22 @@ export default function Onboarding() {
         {paso === 3 && (
           <View style={styles.paso}>
             <Text style={styles.titulo}>Tu ciudad</Text>
-            <Text style={styles.subtitulo}>Donde manejas principalmente?</Text>
-            <View style={styles.opciones}>
-              {CIUDADES.map(c => (
-                <TouchableOpacity
-                  key={c}
-                  style={[styles.opcion, ciudad === c && styles.opcionActiva]}
-                  onPress={() => setCiudad(c)}
-                >
-                  <Text style={[styles.opcionTexto, ciudad === c && styles.opcionTextoActivo]}>{c}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={styles.subtitulo}>Detectando tu ubicacion...</Text>
+            {detectandoCiudad ? (
+              <ActivityIndicator color="#30d158" style={{ marginVertical: 20 }} />
+            ) : (
+              <TextInput
+                style={styles.input}
+                placeholder="Ciudad"
+                placeholderTextColor="#555"
+                value={ciudad}
+                onChangeText={setCiudad}
+              />
+            )}
             <TouchableOpacity
-              style={[styles.btn, !ciudad && styles.btnDesactivado]}
+              style={[styles.btn, !ciudad.trim() && styles.btnDesactivado]}
               onPress={finalizar}
-              disabled={!ciudad}
+              disabled={!ciudad.trim() || detectandoCiudad}
             >
               <Text style={styles.btnTexto}>Empezar a conducir</Text>
             </TouchableOpacity>
@@ -130,11 +152,6 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 32, fontWeight: 'bold', color: '#fff', lineHeight: 40 },
   subtitulo: { fontSize: 16, color: '#888', marginBottom: 8 },
   input: { backgroundColor: '#111', color: '#fff', fontSize: 18, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#222' },
-  opciones: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  opcion: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, borderWidth: 1, borderColor: '#333' },
-  opcionActiva: { borderColor: '#30d158', backgroundColor: '#0a2e14' },
-  opcionTexto: { color: '#888', fontSize: 15 },
-  opcionTextoActivo: { color: '#30d158' },
   btn: { backgroundColor: '#30d158', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
   btnDesactivado: { backgroundColor: '#1a3d22' },
   btnTexto: { color: '#000', fontSize: 16, fontWeight: 'bold' },

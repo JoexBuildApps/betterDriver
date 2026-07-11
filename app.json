@@ -26,7 +26,13 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -41,14 +47,6 @@
         {
           "locationAlwaysAndWhenInUsePermission": "betterDriver necesita tu ubicacion para detectar la velocidad y los limites de velocidad."
         }
-      ],
-      [
-        "expo-speech",
-        {}
-      ],
-      [
-        "expo-keep-awake",
-        {}
       ],
       [
         "expo-splash-screen",
@@ -68,8 +66,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "58e76340-c5bc-477c-a094-9248a4c6b626"
+        "projectId": "6fa94bce-8dbe-4b42-8543-a116492df3ac"
       }
-    }
+    },
+    "owner": "joexbiildapps"
   }
 }

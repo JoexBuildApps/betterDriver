@@ -10,11 +10,11 @@ export interface Evento {
 export interface Viaje {
   id: string;
   fecha: number;
-  duracion: number; // segundos
+  duracion: number;
   topSpeed: number;
   puntosFinales: number;
   eventos: Evento[];
-  score: 'Excelente' | 'Bueno' | 'Regular' | 'Peligroso';
+  score: 'Lento pero seguro' | 'Esto es lo que se espera de ti' | 'En construccion' | 'Te regalaron el pase';
 }
 
 const PUNTOS_INICIO = 1000;
@@ -29,10 +29,10 @@ export function calcularPenalizacion(velocidad: number, limite: number): number 
 }
 
 export function calcularScore(puntos: number): Viaje['score'] {
-  if (puntos >= 900) return 'Excelente';
-  if (puntos >= 700) return 'Bueno';
-  if (puntos >= 500) return 'Regular';
-  return 'Peligroso';
+  if (puntos >= 900) return 'Lento pero seguro';
+  if (puntos >= 700) return 'Esto es lo que se espera de ti';
+  if (puntos >= 500) return 'En construccion';
+  return 'Te regalaron el pase';
 }
 
 export async function guardarViaje(viaje: Omit<Viaje, 'id' | 'score'>): Promise<void> {
@@ -43,8 +43,6 @@ export async function guardarViaje(viaje: Omit<Viaje, 'id' | 'score'>): Promise<
   const existing = await AsyncStorage.getItem('viajes');
   const viajes: Viaje[] = existing ? JSON.parse(existing) : [];
   viajes.unshift(viajeCompleto);
-
-  // guardar máximo 100 viajes
   await AsyncStorage.setItem('viajes', JSON.stringify(viajes.slice(0, 100)));
 }
 
