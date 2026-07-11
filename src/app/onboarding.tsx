@@ -44,7 +44,7 @@ export default function Onboarding() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.inner}>
+      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
 
         <View style={styles.progreso}>
           {[1,2,3].map(n => (

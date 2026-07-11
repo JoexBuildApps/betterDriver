@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, Animated } from 'react-native';
+import { StyleSheet, Text, View, Animated, TouchableOpacity, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { useAudioPlayer } from 'expo-audio';
@@ -53,11 +53,11 @@ export default function Conducir() {
   const player = useAudioPlayer({ uri: 'https://www.soundjay.com/buttons/sounds/beep-01a.mp3' });
 
   useEffect(() => {
-    activateKeepAwakeAsync();
+    try { activateKeepAwakeAsync(); } catch (e) {}
     AsyncStorage.getItem('perfil').then(p => {
       if (p) setPerfil(JSON.parse(p));
     });
-    return () => deactivateKeepAwake();
+    return () => { try { deactivateKeepAwake(); } catch (e) {} };
   }, []);
 
   const flashearTop = () => {
@@ -265,6 +265,15 @@ export default function Conducir() {
           {perfil.nombre} · {perfil.marca} {perfil.modelo}
         </Text>
       )}
+
+      <TouchableOpacity
+        style={styles.cafeBtn}
+        onPress={() => Linking.openURL('https://paypal.me/joebuildapps')}
+      >
+        <Text style={styles.cafeBtnTexto}>☕</Text>
+        <Text style={styles.cafeBtnLabel}>Invítame un café</Text>
+      </TouchableOpacity>
+
     </View>
   );
 }
@@ -364,6 +373,29 @@ const styles = StyleSheet.create({
     color: C.blanco,
     fontSize: 14,
     lineHeight: 22,
+  },
+  cafeBtn: {
+    position: 'absolute',
+    bottom: 24,
+    right: 16,
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#0f1f3a',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#4fc3f7',
+  },
+  cafeBtnTexto: {
+    fontSize: 28,
+  },
+  cafeBtnLabel: {
+    color: '#4fc3f7',
+    fontSize: 12,
+    fontStyle: 'italic',
+    fontWeight: '600',
   },
   perfilTexto: {
     position: 'absolute',
