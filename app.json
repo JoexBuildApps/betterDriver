@@ -42,6 +42,7 @@
     "plugins": [
       "expo-router",
       "expo-audio",
+      "expo-sqlite",
       [
         "expo-location",
         {
@@ -57,7 +58,8 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

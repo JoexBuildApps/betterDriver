@@ -47,7 +47,11 @@ export default function Onboarding() {
   const siguiente = () => setPaso(p => p + 1);
 
   const finalizar = async () => {
-    await AsyncStorage.setItem('perfil', JSON.stringify({ nombre, marca, modelo, anio, ciudad }));
+    const perfilData = { nombre, ciudad };
+    await AsyncStorage.setItem('perfil', JSON.stringify(perfilData));
+    const vehiculo = { marca, modelo, anio };
+    await AsyncStorage.setItem('vehiculos', JSON.stringify([vehiculo]));
+    await AsyncStorage.setItem('vehiculoActivo', JSON.stringify(vehiculo));
     router.replace('/(tabs)');
   };
 

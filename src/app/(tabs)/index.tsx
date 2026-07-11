@@ -10,7 +10,7 @@ import { calcularPenalizacion, guardarViaje, Evento } from '../../utils/viajes';
 import { mensajeAleatorio } from '../../utils/mensajes';
 
 const VELOCIDAD_MINIMA = 8;
-const TIEMPO_NUEVO_VIAJE = 2 * 60 * 1000;
+const TIEMPO_NUEVO_VIAJE = 45 * 1000;
 const GRACIA_SEGUNDOS = 7;
 
 const C = {

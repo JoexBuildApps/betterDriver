@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   seccion: { color: '#4fc3f7', fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 8 },
   texto: { color: '#8899aa', fontSize: 12, lineHeight: 20 },
   separador: { height: 1, backgroundColor: '#0f1f3a', marginVertical: 20 },
-  footer: { padding: 20, backgroundColor: '#0a1628', borderTopWidth: 1, borderTopColor: '#0f1f3a' },
+  footer: { padding: 20, paddingBottom: 40, backgroundColor: '#0a1628', borderTopWidth: 1, borderTopColor: '#0f1f3a' },
   checkbox: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   check: { width: 22, height: 22, borderRadius: 4, borderWidth: 2, borderColor: '#607d8b', alignItems: 'center', justifyContent: 'center' },
   checkActivo: { backgroundColor: '#4fc3f7', borderColor: '#4fc3f7' },
