@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, View, FlatList, Animated } from 'react-native';
-import { useRef, useEffect } from 'react';
 import { getViajes, Viaje, formatearFecha, formatearDuracion } from '../../utils/viajes';
 
 const C = {
