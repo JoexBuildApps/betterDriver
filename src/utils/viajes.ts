@@ -8,13 +8,15 @@ export interface Evento {
 }
 
 export interface Viaje {
+  vehiculo?: string;
   id: string;
   fecha: number;
   duracion: number;
   topSpeed: number;
   puntosFinales: number;
   eventos: Evento[];
-  score: 'Lento pero seguro' | 'Esto es lo que se espera de ti' | 'En construccion' | 'Te regalaron el pase';
+  score: 'Lento pero seguro' | 'Esto es lo que se espera de ti' | 'En construccion' | 'Te regalaron el pase' | 'Deberias ir en bus';
+  estrellas: number;
 }
 
 const PUNTOS_INICIO = 1000;
@@ -32,13 +34,23 @@ export function calcularScore(puntos: number): Viaje['score'] {
   if (puntos >= 900) return 'Lento pero seguro';
   if (puntos >= 700) return 'Esto es lo que se espera de ti';
   if (puntos >= 500) return 'En construccion';
-  return 'Te regalaron el pase';
+  if (puntos >= 200) return 'Te regalaron el pase';
+  return 'Deberias ir en bus';
 }
 
-export async function guardarViaje(viaje: Omit<Viaje, 'id' | 'score'>): Promise<void> {
+export function calcularEstrellas(puntos: number): number {
+  if (puntos >= 900) return 5;
+  if (puntos >= 700) return 4;
+  if (puntos >= 500) return 3;
+  if (puntos >= 200) return 2;
+  return 1;
+}
+
+export async function guardarViaje(viaje: Omit<Viaje, 'id' | 'score' | 'estrellas'>): Promise<void> {
   const id = Date.now().toString();
   const score = calcularScore(viaje.puntosFinales);
-  const viajeCompleto: Viaje = { ...viaje, id, score };
+  const estrellas = calcularEstrellas(viaje.puntosFinales);
+  const viajeCompleto: Viaje = { ...viaje, id, score, estrellas };
 
   const existing = await AsyncStorage.getItem('viajes');
   const viajes: Viaje[] = existing ? JSON.parse(existing) : [];

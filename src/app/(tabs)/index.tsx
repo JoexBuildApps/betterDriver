@@ -83,12 +83,16 @@ export default function Conducir() {
 
   const terminarViaje = async () => {
     const duracion = Math.round((Date.now() - inicioViaje.current) / 1000);
+    const vActivo = await AsyncStorage.getItem('vehiculoActivo');
+    const vehiculoStr = vActivo ? JSON.parse(vActivo) : null;
+    const vehiculoNombre = vehiculoStr ? vehiculoStr.marca + ' ' + vehiculoStr.modelo : undefined;
     await guardarViaje({
       fecha: inicioViaje.current,
       duracion,
       topSpeed,
       puntosFinales: puntosRef.current,
       eventos: eventosViaje.current,
+      vehiculo: vehiculoNombre,
     });
     setPuntos(1000);
     puntosRef.current = 1000;
@@ -267,6 +271,12 @@ export default function Conducir() {
       )}
 
       <TouchableOpacity
+        onPress={viajeActivo ? terminarViaje : undefined}
+      >
+        <Text style={styles.btnTerminarTexto}>{viajeActivo ? 'Terminar viaje' : 'Sin viaje activo'}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.cafeBtn}
         onPress={() => Linking.openURL('https://paypal.me/joebuildapps')}
       >
@@ -374,6 +384,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+  btnTerminar: { marginTop: 20, borderColor: '#4fc3f7', borderWidth: 1, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 },
+  btnTerminarDesactivado: { borderColor: '#1a3050' },
+  btnTerminarTexto: { color: '#4fc3f7', fontSize: 14 },
   cafeBtn: {
     position: 'absolute',
     bottom: 24,
