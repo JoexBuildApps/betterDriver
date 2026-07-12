@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-nati
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { getViajes, Viaje, calcularScore } from '../../utils/viajes';
+import { getViajes, Viaje } from '../../utils/viajes';
+import { calcularScore, calcularEstrellas } from '../../utils/puntos';
 
 const C = {
   fondo: '#0a1628',
@@ -74,7 +75,8 @@ export default function Perfil() {
     return racha;
   };
 
-  const scoreGeneral = calcularScore(promedioPuntos);
+  const estrellasGeneral = calcularEstrellas(promedioPuntos, 60);
+  const scoreGeneral = calcularScore(estrellasGeneral);
 
   const colorScore = () => {
     if (promedioPuntos >= 900) return C.verde;

@@ -42,7 +42,7 @@
     "plugins": [
       "expo-router",
       "expo-audio",
-      "expo-sqlite",
+      "expo-speech",
       [
         "expo-location",
         {
