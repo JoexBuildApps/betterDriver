@@ -217,6 +217,7 @@ export default function Conducir() {
             // stats de puntos
             if (enExceso) {
               segundosEnExceso.current++;
+              if (timerMensajeAleatorio.current) { clearTimeout(timerMensajeAleatorio.current); timerMensajeAleatorio.current = null; }
               if (!alertaActiva.current) {
                 alertaActiva.current = true;
                 try { player.play(); } catch (e) {}
@@ -227,6 +228,7 @@ export default function Conducir() {
             } else {
               segundosBien.current++;
               // Mensaje aleatorio tier 1 cada 3-5 minutos
+              if (!timerMensajeAleatorio.current && !alertaActiva.current) {
                 const delay = (180 + Math.random() * 120) * 1000;
                 timerMensajeAleatorio.current = setTimeout(() => {
                   hablar(mensajeAleatorio('aleatorio'));
