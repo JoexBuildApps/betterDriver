@@ -87,7 +87,6 @@ export const MENSAJES = {
     "La calle no es un autódromo",
     "Arrancaste bien... para una película de acción",
   ],
-,
   aleatorio: [
     'Vas bien, la abuela está tranquila',
     'Así se maneja, sin dramas',
