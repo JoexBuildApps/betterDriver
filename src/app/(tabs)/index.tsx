@@ -33,11 +33,14 @@ export default function Conducir() {
   const [perfil, setPerfil] = useState<any>(null);
   const [alertaTop, setAlertaTop] = useState(false);
   const [mostrarLimite, setMostrarLimite] = useState(false);
+  const [autoInicio, setAutoInicio] = useState(false);
+  const [countdownInicio, setCountdownInicio] = useState(5);
   const [countdown, setCountdown] = useState(5);
   const [limiteTemp, setLimiteTemp] = useState(50);
 
   // Stats del viaje
   const segundosBien = useRef(0);
+  const historialVelocidad = useRef<number[]>([]);
   const segundosEnExceso = useRef(0);
   const totalVelocidades = useRef(0);
   const muestrasVelocidad = useRef(0);
@@ -48,6 +51,7 @@ export default function Conducir() {
   const alertaActiva = useRef(false);
   const timerParado = useRef<any>(null);
   const timerCountdown = useRef<any>(null);
+  const timerMensajeAleatorio = useRef<any>(null);
   const inicioViaje = useRef<number>(Date.now());
   const eventosViaje = useRef<Evento[]>([]);
   const rutaViaje = useRef<PuntoGPS[]>([]);
@@ -59,6 +63,20 @@ export default function Conducir() {
     AsyncStorage.getItem('limiteUltimo').then(l => {
       if (l) { setLimite(parseInt(l)); setLimiteTemp(parseInt(l)); }
     });
+    // Auto inicio
+    setAutoInicio(true);
+    let c = 5;
+    setCountdownInicio(5);
+    const timerAuto = setInterval(() => {
+      c--;
+      setCountdownInicio(c);
+      if (c <= 0) {
+        clearInterval(timerAuto);
+        setAutoInicio(false);
+        iniciarModalLimite();
+      }
+    }, 1000);
+    return () => clearInterval(timerAuto);
     return () => { try { deactivateKeepAwake(); } catch (e) {} };
   }, []);
 
@@ -160,7 +178,11 @@ export default function Conducir() {
         (location) => {
           const { latitude, longitude, speed } = location.coords;
           const rawKmh = (speed ?? 0) * 3.6;
-          const kmh = rawKmh < VELOCIDAD_MINIMA ? 0 : Math.round(rawKmh);
+          // Suavizado: promedio de ultimas 3 lecturas
+          historialVelocidad.current.push(rawKmh);
+          if (historialVelocidad.current.length > 3) historialVelocidad.current.shift();
+          const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
+          const kmh = promRaw < VELOCIDAD_MINIMA ? 0 : Math.round(promRaw);
 
           setVelocidad(kmh);
 
@@ -204,6 +226,13 @@ export default function Conducir() {
               }
             } else {
               segundosBien.current++;
+              // Mensaje aleatorio tier 1 cada 3-5 minutos
+                const delay = (180 + Math.random() * 120) * 1000;
+                timerMensajeAleatorio.current = setTimeout(() => {
+                  hablar(mensajeAleatorio('aleatorio'));
+                  timerMensajeAleatorio.current = null;
+                }, delay);
+              }
             }
 
             if (timerParado.current) {

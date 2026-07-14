@@ -192,11 +192,7 @@ export default function Viajes() {
                 </View>
               )}
 
-              {item.ruta && item.ruta.length > 0 && (
-                <TouchableOpacity style={styles.btnRuta} onPress={() => abrirRuta(item)}>
-                  <Text style={styles.btnRutaTexto}>🗺 Ver ruta</Text>
-                </TouchableOpacity>
-              )}
+
             </View>
           )}
         />
