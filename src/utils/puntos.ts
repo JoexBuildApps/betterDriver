@@ -1,18 +1,11 @@
-// Sistema de puntos por minuto
-// +1 pt por minuto dentro del limite
-// -10 pts por infraccion
-// -1 pt por minuto en exceso sostenido
-// +20 bonus si 0 infracciones al terminar
-// +10 bonus si menos de 30 seg en exceso total
-
 export interface ResumenViaje {
-  puntosBase: number;        // minutos bien manejados
-  penalizaciones: number;    // infracciones × 10
-  minutosEnExceso: number;   // minutos sobre el limite
-  bonus: number;             // bonus al terminar
-  total: number;             // puntos finales
-  infracciones: number;      // numero de infracciones
-  segundosEnExceso: number;  // segundos totales en exceso
+  puntosBase: number;
+  penalizaciones: number;
+  minutosEnExceso: number;
+  bonus: number;
+  total: number;
+  infracciones: number;
+  segundosEnExceso: number;
 }
 
 export function calcularResumen(
@@ -23,7 +16,7 @@ export function calcularResumen(
   const minutosTotales = Math.floor(duracionSegundos / 60);
   const minutosEnExceso = Math.floor(segundosEnExceso / 60);
   const puntosBase = Math.max(0, minutosTotales - minutosEnExceso);
-  const penalizaciones = infracciones * 10;
+  const penalizaciones = infracciones * 3;
   
   let bonus = 0;
   if (infracciones === 0) bonus += 20;
@@ -42,13 +35,13 @@ export function calcularResumen(
   };
 }
 
-export function calcularEstrellas(total: number, duracionSegundos: number): number {
-  const minutos = Math.max(1, Math.floor(duracionSegundos / 60));
-  const ratio = total / minutos; // puntos por minuto
-  if (ratio >= 0.9) return 5;
-  if (ratio >= 0.7) return 4;
-  if (ratio >= 0.5) return 3;
-  if (ratio >= 0.3) return 2;
+export function calcularEstrellas(duracionSegundos: number, segundosEnExceso: number): number {
+  if (duracionSegundos === 0) return 3;
+  const porcentaje = (segundosEnExceso / duracionSegundos) * 100;
+  if (porcentaje <= 5) return 5;
+  if (porcentaje <= 15) return 4;
+  if (porcentaje <= 30) return 3;
+  if (porcentaje <= 50) return 2;
   return 1;
 }
 

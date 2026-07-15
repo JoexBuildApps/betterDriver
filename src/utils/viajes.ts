@@ -59,7 +59,7 @@ export async function guardarViaje(viaje: {
   segundosEnExceso: number;
 }): Promise<void> {
   const resumen = calcularResumen(viaje.duracion, viaje.eventos.length, viaje.segundosEnExceso);
-  const estrellas = calcularEstrellas(resumen.total, viaje.duracion);
+  const estrellas = calcularEstrellas(viaje.duracion, viaje.segundosEnExceso);
   const score = calcularScore(estrellas);
 
   const viajeCompleto: Viaje = {

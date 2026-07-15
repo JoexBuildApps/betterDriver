@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated, Linking, Modal } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Animated, Linking, Modal, useWindowDimensions } from 'react-native';
+import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { useAudioPlayer } from 'expo-audio';
@@ -7,10 +8,11 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { guardarViaje, Evento, PuntoGPS } from '../../utils/viajes';
 import { mensajeAleatorio } from '../../utils/mensajes';
+import { CONFIG } from '../../utils/config';
 
 const VELOCIDAD_MINIMA = 8;
-const TIEMPO_NUEVO_VIAJE = 3 * 60 * 1000; // 3 minutos
-const TOLERANCIA = 1.10; // 10%
+const TIEMPO_NUEVO_VIAJE = 3 * 60 * 1000;
+const TOLERANCIA = 1.10;
 const LIMITES_OPCIONES = [20, 30, 40, 50, 60, 80];
 
 const C = {
@@ -22,9 +24,92 @@ const C = {
   verde: '#30d158',
   gris: '#607d8b',
   superficie: '#0f1f3a',
+  arcoBase: '#1a3050',
 };
 
+function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; limite: number; size?: number }) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size * 0.42;
+  const strokeWidth = size * 0.08;
+
+  const startAngle = 220;
+  const endAngle = 320;
+  const totalAngle = 360 - startAngle + endAngle;
+
+  const velocidadMax = Math.max(limite * 2, 120);
+  const porcentaje = Math.min(velocidad / velocidadMax, 1);
+  const angulo = startAngle + porcentaje * totalAngle;
+
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+  const arcPath = (from: number, to: number) => {
+    const fx = cx + r * Math.cos(toRad(from));
+    const fy = cy + r * Math.sin(toRad(from));
+    const tx = cx + r * Math.cos(toRad(to));
+    const ty = cy + r * Math.sin(toRad(to));
+    const large = to - from > 180 ? 1 : 0;
+    return `M ${fx} ${fy} A ${r} ${r} 0 ${large} 1 ${tx} ${ty}`;
+  };
+
+  const getColor = () => {
+    if (velocidad > limite * TOLERANCIA) return C.rojo;
+    if (velocidad > limite) return C.amarillo;
+    return C.marca;
+  };
+
+  const totalArcAngle = totalAngle;
+  const filledAngle = porcentaje * totalArcAngle;
+
+  return (
+    <Svg width={size} height={size}>
+      {/* Arco base */}
+      <Path
+        d={arcPath(startAngle, startAngle + totalAngle)}
+        fill="none"
+        stroke={C.arcoBase}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+      {/* Arco activo */}
+      {velocidad > 0 && (
+        <Path
+          d={arcPath(startAngle, startAngle + filledAngle)}
+          fill="none"
+          stroke={getColor()}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+      )}
+      {/* Número central */}
+      <SvgText
+        x={cx}
+        y={cy + size * 0.06}
+        textAnchor="middle"
+        fill={getColor()}
+        fontSize={size * 0.28}
+        fontWeight="200"
+      >
+        {velocidad}
+      </SvgText>
+      {/* km/h */}
+      <SvgText
+        x={cx}
+        y={cy + size * 0.22}
+        textAnchor="middle"
+        fill={C.gris}
+        fontSize={size * 0.08}
+      >
+        km/h
+      </SvgText>
+    </Svg>
+  );
+}
+
 export default function Conducir() {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
   const [velocidad, setVelocidad] = useState(0);
   const [limite, setLimite] = useState(50);
   const [topSpeed, setTopSpeed] = useState(0);
@@ -33,19 +118,16 @@ export default function Conducir() {
   const [perfil, setPerfil] = useState<any>(null);
   const [alertaTop, setAlertaTop] = useState(false);
   const [mostrarLimite, setMostrarLimite] = useState(false);
-  const [autoInicio, setAutoInicio] = useState(false);
-  const [countdownInicio, setCountdownInicio] = useState(5);
   const [countdown, setCountdown] = useState(5);
   const [limiteTemp, setLimiteTemp] = useState(50);
 
-  // Stats del viaje
   const segundosBien = useRef(0);
-  const historialVelocidad = useRef<number[]>([]);
   const segundosEnExceso = useRef(0);
   const totalVelocidades = useRef(0);
   const muestrasVelocidad = useRef(0);
   const distanciaM = useRef(0);
   const ultimaPos = useRef<{ lat: number; lon: number } | null>(null);
+  const historialVelocidad = useRef<number[]>([]);
 
   const flashAnim = useRef(new Animated.Value(1)).current;
   const alertaActiva = useRef(false);
@@ -63,21 +145,20 @@ export default function Conducir() {
     AsyncStorage.getItem('limiteUltimo').then(l => {
       if (l) { setLimite(parseInt(l)); setLimiteTemp(parseInt(l)); }
     });
-    // Auto inicio
-    setAutoInicio(true);
     let c = 5;
-    setCountdownInicio(5);
+    setCountdown(5);
     const timerAuto = setInterval(() => {
       c--;
-      setCountdownInicio(c);
+      setCountdown(c);
       if (c <= 0) {
         clearInterval(timerAuto);
-        setAutoInicio(false);
         iniciarModalLimite();
       }
     }, 1000);
-    return () => clearInterval(timerAuto);
-    return () => { try { deactivateKeepAwake(); } catch (e) {} };
+    return () => {
+      try { deactivateKeepAwake(); } catch (e) {}
+      clearInterval(timerAuto);
+    };
   }, []);
 
   const flashearTop = () => {
@@ -128,6 +209,7 @@ export default function Conducir() {
     muestrasVelocidad.current = 0;
     distanciaM.current = 0;
     ultimaPos.current = null;
+    historialVelocidad.current = [];
     eventosViaje.current = [];
     rutaViaje.current = [];
     setTopSpeed(0);
@@ -136,8 +218,9 @@ export default function Conducir() {
 
   const terminarViaje = async () => {
     if (timerParado.current) clearTimeout(timerParado.current);
+    if (timerMensajeAleatorio.current) clearTimeout(timerMensajeAleatorio.current);
     const duracion = Math.round((Date.now() - inicioViaje.current) / 1000);
-    if (duracion < 30) { setViajeActivo(false); return; } // ignorar viajes muy cortos
+    if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); return; }
 
     const velocidadPromedio = muestrasVelocidad.current > 0
       ? Math.round(totalVelocidades.current / muestrasVelocidad.current)
@@ -167,8 +250,6 @@ export default function Conducir() {
 
   useEffect(() => {
     let suscripcion: any;
-    let intervaloStats: any;
-
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
@@ -178,7 +259,6 @@ export default function Conducir() {
         (location) => {
           const { latitude, longitude, speed } = location.coords;
           const rawKmh = (speed ?? 0) * 3.6;
-          // Suavizado: promedio de ultimas 3 lecturas
           historialVelocidad.current.push(rawKmh);
           if (historialVelocidad.current.length > 3) historialVelocidad.current.shift();
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
@@ -187,7 +267,6 @@ export default function Conducir() {
           setVelocidad(kmh);
 
           if (kmh > 0 && viajeActivo) {
-            // calcular distancia
             if (ultimaPos.current) {
               const dlat = latitude - ultimaPos.current.lat;
               const dlon = longitude - ultimaPos.current.lon;
@@ -195,18 +274,14 @@ export default function Conducir() {
               distanciaM.current += d;
             }
             ultimaPos.current = { lat: latitude, lon: longitude };
-
-            // velocidad promedio
             totalVelocidades.current += kmh;
             muestrasVelocidad.current++;
 
-            // top speed
             setTopSpeed(prev => {
               if (kmh > prev) { flashearTop(); return kmh; }
               return prev;
             });
 
-            // punto GPS para ruta
             const enExceso = kmh > limite * TOLERANCIA;
             const enPrecaucion = kmh > limite && !enExceso;
             const color = enExceso ? 'rojo' : enPrecaucion ? 'amarillo' : 'verde';
@@ -214,7 +289,6 @@ export default function Conducir() {
               rutaViaje.current.push({ lat: latitude, lon: longitude, velocidad: kmh, limite, timestamp: Date.now(), color });
             }
 
-            // stats de puntos
             if (enExceso) {
               segundosEnExceso.current++;
               if (timerMensajeAleatorio.current) { clearTimeout(timerMensajeAleatorio.current); timerMensajeAleatorio.current = null; }
@@ -227,7 +301,6 @@ export default function Conducir() {
               }
             } else {
               segundosBien.current++;
-              // Mensaje aleatorio tier 1 cada 3-5 minutos
               if (!timerMensajeAleatorio.current && !alertaActiva.current) {
                 const delay = (180 + Math.random() * 120) * 1000;
                 timerMensajeAleatorio.current = setTimeout(() => {
@@ -252,18 +325,8 @@ export default function Conducir() {
         }
       );
     })();
-
-    return () => {
-      suscripcion?.remove();
-      if (intervaloStats) clearInterval(intervaloStats);
-    };
+    return () => suscripcion?.remove();
   }, [viajeActivo, limite]);
-
-  const getColorVelocidad = () => {
-    if (velocidad > limite * TOLERANCIA) return C.rojo;
-    if (velocidad > limite) return C.amarillo;
-    return C.blanco;
-  };
 
   const getEstado = () => {
     if (velocidad > limite * TOLERANCIA) return 'Exceso de velocidad';
@@ -277,10 +340,9 @@ export default function Conducir() {
     return C.gris;
   };
 
-  // Puntos en tiempo real
   const puntosActuales = Math.max(0,
     Math.floor(segundosBien.current / 60) -
-    (eventosViaje.current.length * 10) -
+    (eventosViaje.current.length * 3) -
     Math.floor(segundosEnExceso.current / 60)
   );
 
@@ -290,11 +352,11 @@ export default function Conducir() {
     return C.rojo;
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.marca}>betterDriver</Text>
+  const velocimetroSize = isLandscape ? Math.min(height * 0.75, 220) : Math.min(width * 0.75, 280);
 
-      <View style={styles.header}>
+  const PanelStats = () => (
+    <View style={[styles.statsPanel, isLandscape && styles.statsPanelLandscape]}>
+      <View style={styles.statsRow}>
         <View>
           <Text style={styles.headerLabel}>puntos</Text>
           <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntosActuales}</Text>
@@ -309,12 +371,7 @@ export default function Conducir() {
         </View>
       </View>
 
-      <View style={styles.velocimetro}>
-        <Text style={[styles.velocidadNumero, { color: getColorVelocidad() }]}>{velocidad}</Text>
-        <Text style={styles.unidad}>km/h</Text>
-      </View>
-
-      <View style={styles.limiteContainer}>
+      <View style={styles.limiteRow}>
         <View style={styles.limiteBadge}>
           <Text style={styles.limiteBadgeTexto}>{limite}</Text>
         </View>
@@ -339,13 +396,81 @@ export default function Conducir() {
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity style={styles.cafeBtn} onPress={() => Linking.openURL('https://paypal.me/joebuildapps')}>
+      <TouchableOpacity
+        style={[styles.cafeBtn, isLandscape && { position: 'relative', bottom: 0, right: 0, alignSelf: 'flex-end', marginTop: 12 }]}
+        onPress={() => Linking.openURL(CONFIG.paypal)}
+      >
         <Text style={styles.cafeBtnTexto}>☕</Text>
         <Text style={styles.cafeBtnLabel}>Invítame un café</Text>
       </TouchableOpacity>
+    </View>
+  );
 
-      {perfil && (
-        <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.marca}>betterDriver</Text>
+
+      {isLandscape ? (
+        <View style={styles.landscapeContainer}>
+          <View style={styles.landscapeLeft}>
+            <Velocimetro velocidad={velocidad} limite={limite} size={velocimetroSize} />
+          </View>
+          <View style={styles.divisor} />
+          <PanelStats />
+        </View>
+      ) : (
+        <View style={styles.portraitContainer}>
+          <View style={styles.portraitHeader}>
+            <View>
+              <Text style={styles.headerLabel}>puntos</Text>
+              <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntosActuales}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.headerLabel, alertaTop && { color: C.rojo }]}>
+                {alertaTop ? '⚠ alerta' : 'top speed'}
+              </Text>
+              <Animated.Text style={[styles.headerValor, alertaTop && { color: C.rojo }, { opacity: alertaTop ? flashAnim : 1 }]}>
+                {topSpeed} km/h
+              </Animated.Text>
+            </View>
+          </View>
+
+          <Velocimetro velocidad={velocidad} limite={limite} size={velocimetroSize} />
+
+          <View style={styles.limiteRow}>
+            <View style={styles.limiteBadge}>
+              <Text style={styles.limiteBadgeTexto}>{limite}</Text>
+            </View>
+            <Text style={styles.limiteLabel}>límite de zona</Text>
+          </View>
+
+          <Text style={[styles.estado, { color: getColorEstado() }]}>{getEstado()}</Text>
+
+          {mensaje !== '' && (
+            <View style={styles.mensajeContainer}>
+              <Text style={styles.mensajeTexto}>{mensaje}</Text>
+            </View>
+          )}
+
+          {!viajeActivo ? (
+            <TouchableOpacity style={styles.btnIniciar} onPress={iniciarModalLimite}>
+              <Text style={styles.btnIniciarTexto}>Iniciar viaje</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
+              <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={styles.cafeBtn} onPress={() => Linking.openURL(CONFIG.paypal)}>
+            <Text style={styles.cafeBtnTexto}>☕</Text>
+            <Text style={styles.cafeBtnLabel}>Invítame un café</Text>
+          </TouchableOpacity>
+
+          {perfil && (
+            <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>
+          )}
+        </View>
       )}
 
       <Modal visible={mostrarLimite} transparent animationType="fade">
@@ -353,7 +478,6 @@ export default function Conducir() {
           <View style={styles.modalBox}>
             <Text style={styles.modalTitulo}>¿Límite de velocidad?</Text>
             <Text style={styles.modalSub}>Velocidad urbana sugerida: 50 km/h</Text>
-
             <View style={styles.limitesGrid}>
               {LIMITES_OPCIONES.map(l => (
                 <TouchableOpacity
@@ -365,7 +489,6 @@ export default function Conducir() {
                 </TouchableOpacity>
               ))}
             </View>
-
             <Text style={styles.modalCountdown}>Confirmando {limiteTemp} km/h en {countdown}s...</Text>
           </View>
         </View>
@@ -375,28 +498,32 @@ export default function Conducir() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.fondo, alignItems: 'center', justifyContent: 'center' },
-  marca: { position: 'absolute', top: 55, color: C.marca, fontSize: 26, fontWeight: '600', letterSpacing: 1 },
-  header: { position: 'absolute', top: 100, flexDirection: 'row', justifyContent: 'space-between', width: '90%' },
+  container: { flex: 1, backgroundColor: C.fondo },
+  marca: { textAlign: 'center', paddingTop: 20, color: C.marca, fontSize: 22, fontWeight: '600', letterSpacing: 1 },
+  portraitContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 20 },
+  portraitHeader: { flexDirection: 'row', justifyContent: 'space-between', width: '90%', marginBottom: 8 },
+  landscapeContainer: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  landscapeLeft: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  divisor: { width: 1, height: '70%', backgroundColor: '#1a3050' },
+  statsPanel: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  statsPanelLandscape: { alignItems: 'stretch' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 12 },
   headerLabel: { color: C.gris, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
   headerValor: { color: C.blanco, fontSize: 22, fontWeight: '500', marginTop: 2 },
-  velocimetro: { alignItems: 'center', marginBottom: 8 },
-  velocidadNumero: { fontSize: 160, fontWeight: '200', lineHeight: 170, letterSpacing: -6 },
-  unidad: { color: C.gris, fontSize: 22, letterSpacing: 3, marginTop: -12 },
-  limiteContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
-  limiteBadge: { width: 52, height: 52, borderRadius: 26, borderWidth: 3, borderColor: C.blanco, alignItems: 'center', justifyContent: 'center' },
-  limiteBadgeTexto: { color: C.blanco, fontSize: 18, fontWeight: '600' },
+  limiteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
+  limiteBadge: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.blanco, alignItems: 'center', justifyContent: 'center' },
+  limiteBadgeTexto: { color: C.blanco, fontSize: 16, fontWeight: '600' },
   limiteLabel: { color: C.gris, fontSize: 14 },
-  estado: { fontSize: 13, marginTop: 14, letterSpacing: 1, textTransform: 'uppercase' },
-  mensajeContainer: { position: 'absolute', bottom: 180, left: 20, right: 20, backgroundColor: C.superficie, borderRadius: 12, padding: 16, borderLeftWidth: 3, borderLeftColor: C.marca },
-  mensajeTexto: { color: C.blanco, fontSize: 14, lineHeight: 22 },
-  btnIniciar: { marginTop: 32, backgroundColor: C.verde, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
+  estado: { fontSize: 13, marginTop: 10, letterSpacing: 1, textTransform: 'uppercase' },
+  mensajeContainer: { marginTop: 12, marginHorizontal: 16, backgroundColor: C.superficie, borderRadius: 12, padding: 14, borderLeftWidth: 3, borderLeftColor: C.marca },
+  mensajeTexto: { color: C.blanco, fontSize: 13, lineHeight: 20 },
+  btnIniciar: { marginTop: 20, backgroundColor: C.verde, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
   btnIniciarTexto: { color: '#000', fontSize: 16, fontWeight: 'bold' },
-  btnTerminar: { marginTop: 32, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
+  btnTerminar: { marginTop: 20, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
   btnTerminarTexto: { color: C.rojo, fontSize: 16 },
-  cafeBtn: { position: 'absolute', bottom: 24, right: 16, flexDirection: 'column', alignItems: 'center', gap: 4, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: C.marca },
-  cafeBtnTexto: { fontSize: 28 },
-  cafeBtnLabel: { color: C.marca, fontSize: 12, fontStyle: 'italic', fontWeight: '600' },
+  cafeBtn: { position: 'absolute', bottom: 24, right: 16, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.marca },
+  cafeBtnTexto: { fontSize: 22 },
+  cafeBtnLabel: { color: C.marca, fontSize: 13, fontStyle: 'italic', fontWeight: '600' },
   perfilTexto: { position: 'absolute', bottom: 100, color: C.gris, fontSize: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
   modalBox: { backgroundColor: C.superficie, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca },

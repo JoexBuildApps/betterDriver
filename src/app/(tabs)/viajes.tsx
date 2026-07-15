@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, FlatList, Animated, TouchableOpacity, Share, Platform } from 'react-native';
+import { StyleSheet, Text, View, FlatList, Animated, TouchableOpacity, Share, Platform, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getViajes, Viaje, formatearFecha, formatearDuracion, getPuntosSemanales } from '../../utils/viajes';
 
 const C = {
@@ -76,6 +77,27 @@ async function abrirRuta(viaje: Viaje) {
   const path = FileSystem.documentDirectory + `viaje_${viaje.id}.gpx`;
   await FileSystem.writeAsStringAsync(path, gpx);
   await Share.share({ url: path, title: 'Ruta betterDriver' });
+}
+
+async function borrarViaje(id: string, onBorrado: () => void) {
+  Alert.alert(
+    'Borrar viaje',
+    '¿Seguro que quieres borrar este viaje?',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Borrar',
+        style: 'destructive',
+        onPress: async () => {
+          const existing = await AsyncStorage.getItem('viajes');
+          const viajes: Viaje[] = existing ? JSON.parse(existing) : [];
+          const nuevos = viajes.filter(v => v.id !== id);
+          await AsyncStorage.setItem('viajes', JSON.stringify(nuevos));
+          onBorrado();
+        }
+      }
+    ]
+  );
 }
 
 export default function Viajes() {
@@ -192,6 +214,16 @@ export default function Viajes() {
                 </View>
               )}
 
+              <TouchableOpacity
+                style={styles.btnBorrar}
+                onPress={() => borrarViaje(item.id, () => {
+                  getViajes().then(setViajes);
+                  getPuntosSemanales().then(setPuntosSemanales);
+                })}
+              >
+                <Text style={styles.btnBorrarTexto}>🗑 Borrar viaje</Text>
+              </TouchableOpacity>
+
 
             </View>
           )}
@@ -236,7 +268,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: C.superficie, borderRadius: 12, padding: 16, marginBottom: 12 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   fecha: { color: C.gris, fontSize: 13 },
-  estrellas: { fontSize: 18, letterSpacing: 2 },
+  estrellas: { fontSize: 26, letterSpacing: 3 },
   score: { fontSize: 12, fontWeight: '600', marginTop: 2 },
   cardBody: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   cardBody2: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
@@ -249,6 +281,8 @@ const styles = StyleSheet.create({
   detalleValor: { color: C.blanco, fontSize: 13, fontWeight: '500' },
   btnRuta: { marginTop: 10, borderWidth: 1, borderColor: C.marca, borderRadius: 8, padding: 10, alignItems: 'center' },
   btnRutaTexto: { color: C.marca, fontSize: 14 },
+  btnBorrar: { marginTop: 10, borderWidth: 1, borderColor: C.rojo, borderRadius: 8, padding: 10, alignItems: 'center' },
+  btnBorrarTexto: { color: C.rojo, fontSize: 14 },
   semanaCard: { backgroundColor: C.superficie, borderRadius: 12, padding: 16, marginBottom: 12 },
   semanaHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   semanaTitulo: { color: C.blanco, fontSize: 16, fontWeight: '500' },

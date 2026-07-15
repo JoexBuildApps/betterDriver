@@ -1,7 +1,9 @@
+import { CONFIG } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
+import { Linking } from 'react-native';
 import { useCallback } from 'react';
 import { getViajes, Viaje } from '../../utils/viajes';
 import { calcularScore, calcularEstrellas } from '../../utils/puntos';
@@ -152,6 +154,13 @@ export default function Perfil() {
           <Text style={styles.btnAgregarTexto}>+ Agregar vehículo</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        style={styles.btnContacto}
+        onPress={() => Linking.openURL('mailto:' + CONFIG.email + '?subject=betterDriver%20-%20Soporte')}
+      >
+        <Text style={styles.btnContactoTexto}>📧 Contacto y soporte</Text>
+      </TouchableOpacity>
+
     </ScrollView>
   );
 }
@@ -182,4 +191,6 @@ const styles = StyleSheet.create({
   eliminar: { color: C.rojo, fontSize: 16, padding: 8 },
   btnAgregar: { borderWidth: 1, borderColor: C.marca, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
   btnAgregarTexto: { color: C.marca, fontSize: 15 },
+  btnContacto: { borderWidth: 1, borderColor: C.gris, borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 40 },
+  btnContactoTexto: { color: C.gris, fontSize: 14 },
 });
