@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated, Linking, Modal, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
@@ -111,6 +112,7 @@ function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; lim
 export default function Conducir() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
+  const insets = useSafeAreaInsets();
 
   const [velocidad, setVelocidad] = useState(0);
   const [limite, setLimite] = useState(50);
@@ -399,7 +401,7 @@ export default function Conducir() {
       )}
 
       <TouchableOpacity
-        style={[styles.cafeBtn, isLandscape && { position: 'relative', bottom: 0, right: 0, alignSelf: 'flex-end', marginTop: 12 }]}
+        style={[styles.cafeBtn, isLandscape && { position: 'relative', bottom: 0, right: 0, alignSelf: 'flex-end', marginTop: 12, marginRight: insets.right }]}
         onPress={() => Linking.openURL(CONFIG.paypal)}
       >
         <Text style={styles.cafeBtnTexto}>☕</Text>
@@ -409,7 +411,7 @@ export default function Conducir() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
       <Text style={styles.marca}>betterDriver</Text>
 
       {isLandscape ? (
@@ -469,9 +471,7 @@ export default function Conducir() {
             <Text style={styles.cafeBtnLabel}>Invítame un café</Text>
           </TouchableOpacity>
 
-          {perfil && (
-            <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>
-          )}
+
         </View>
       )}
 
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   cafeBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.marca, marginTop: 16 },
   cafeBtnTexto: { fontSize: 22 },
   cafeBtnLabel: { color: C.marca, fontSize: 13, fontStyle: 'italic', fontWeight: '600' },
-  perfilTexto: { position: 'absolute', bottom: 100, color: C.gris, fontSize: 12 },
+  perfilTexto: { color: C.gris, fontSize: 12, marginTop: 8 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
   modalBox: { backgroundColor: C.superficie, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca },
   modalTitulo: { color: C.blanco, fontSize: 20, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
