@@ -21,6 +21,7 @@ export default function Onboarding() {
   const [ciudad, setCiudad] = useState('');
   const [paso, setPaso] = useState(1);
   const [detectandoCiudad, setDetectandoCiudad] = useState(false);
+  const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
 
   useEffect(() => {
     if (paso === 3) detectarCiudad();
@@ -147,6 +148,24 @@ export default function Onboarding() {
                 onChangeText={setCiudad}
               />
             )}
+            <View style={styles.unidadContainer}>
+              <Text style={styles.unidadLabel}>Unidad de velocidad</Text>
+              <View style={styles.unidadBtns}>
+                <TouchableOpacity
+                  style={[styles.unidadBtn, unidad === 'kmh' && styles.unidadBtnActivo]}
+                  onPress={() => setUnidad('kmh')}
+                >
+                  <Text style={[styles.unidadBtnTexto, unidad === 'kmh' && styles.unidadBtnTextoActivo]}>km/h</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.unidadBtn, unidad === 'mph' && styles.unidadBtnActivo]}
+                  onPress={() => setUnidad('mph')}
+                >
+                  <Text style={[styles.unidadBtnTexto, unidad === 'mph' && styles.unidadBtnTextoActivo]}>mph</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             <TouchableOpacity
               style={[styles.btn, (!ciudad.trim() || detectandoCiudad) && styles.btnDesactivado]}
               onPress={finalizar}

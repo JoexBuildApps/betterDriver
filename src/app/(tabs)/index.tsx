@@ -28,7 +28,7 @@ const C = {
   arcoBase: '#1a3050',
 };
 
-function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; limite: number; size?: number }) {
+function Velocimetro({ velocidad, limite, size = 260, unidadLabel = 'km/h' }: { velocidad: number; limite: number; size?: number; unidadLabel?: string }) {
   const cx = size / 2;
   const cy = size / 2;
   const r = size * 0.40;
@@ -120,6 +120,7 @@ export default function Conducir() {
   const [viajeActivo, setViajeActivo] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [perfil, setPerfil] = useState<any>(null);
+  const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
   const [alertaTop, setAlertaTop] = useState(false);
   const [mostrarLimite, setMostrarLimite] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -145,7 +146,7 @@ export default function Conducir() {
 
   useEffect(() => {
     try { activateKeepAwakeAsync(); } catch (e) {}
-    AsyncStorage.getItem('perfil').then(p => { if (p) setPerfil(JSON.parse(p)); });
+    AsyncStorage.getItem('perfil').then(p => { if (p) { const parsed = JSON.parse(p); setPerfil(parsed); setUnidad(parsed.unidad || 'kmh'); } });
     AsyncStorage.getItem('limiteUltimo').then(l => {
       if (l) { setLimite(parseInt(l)); setLimiteTemp(parseInt(l)); }
     });
@@ -332,6 +333,9 @@ export default function Conducir() {
     return () => suscripcion?.remove();
   }, [viajeActivo, limite]);
 
+  const kmhToDisplay = (kmh: number) => unidad === 'mph' ? Math.round(kmh * 0.621371) : kmh;
+  const unidadLabel = unidad === 'mph' ? 'mph' : 'km/h';
+
   const getEstado = () => {
     if (velocidad > limite * TOLERANCIA) return 'Exceso de velocidad';
     if (velocidad > limite) return 'Precaución';
@@ -370,7 +374,7 @@ export default function Conducir() {
             {alertaTop ? '⚠ alerta' : 'top speed'}
           </Text>
           <Animated.Text style={[styles.headerValor, alertaTop && { color: C.rojo }, { opacity: alertaTop ? flashAnim : 1 }]}>
-            {topSpeed} km/h
+            {kmhToDisplay(topSpeed)} {unidadLabel}
           </Animated.Text>
         </View>
       </View>
@@ -417,7 +421,7 @@ export default function Conducir() {
       {isLandscape ? (
         <View style={styles.landscapeContainer}>
           <View style={styles.landscapeLeft}>
-            <Velocimetro velocidad={velocidad} limite={limite} size={velocimetroSize} />
+            <Velocimetro velocidad={kmhToDisplay(velocidad)} limite={limite} size={velocimetroSize} unidadLabel={unidadLabel} />
           </View>
           <View style={styles.divisor} />
           <PanelStats />
@@ -439,7 +443,7 @@ export default function Conducir() {
             </View>
           </View>
 
-          <Velocimetro velocidad={velocidad} limite={limite} size={velocimetroSize} />
+          <Velocimetro velocidad={kmhToDisplay(velocidad)} limite={limite} size={velocimetroSize} unidadLabel={unidadLabel} />
 
           <View style={styles.limiteRow}>
             <View style={styles.limiteBadge}>
