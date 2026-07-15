@@ -264,7 +264,7 @@ export default function Conducir() {
           historialVelocidad.current.push(rawKmh);
           if (historialVelocidad.current.length > 3) historialVelocidad.current.shift();
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
-          const kmh = promRaw < VELOCIDAD_MINIMA ? 0 : Math.round(promRaw);
+          const kmh = promRaw < 5 ? 0 : Math.round(promRaw);
 
           setVelocidad(kmh);
 
@@ -280,7 +280,7 @@ export default function Conducir() {
             muestrasVelocidad.current++;
 
             setTopSpeed(prev => {
-              if (kmh > prev) { flashearTop(); return kmh; }
+              if (kmh > prev && kmh > 5) { flashearTop(); return kmh; }
               return prev;
             });
 
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
   btnIniciarTexto: { color: '#000', fontSize: 16, fontWeight: 'bold' },
   btnTerminar: { marginTop: 20, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
   btnTerminarTexto: { color: C.rojo, fontSize: 16 },
-  cafeBtn: { position: 'absolute', bottom: 80, right: 16, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.marca },
+  cafeBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.marca, marginTop: 16 },
   cafeBtnTexto: { fontSize: 22 },
   cafeBtnLabel: { color: C.marca, fontSize: 13, fontStyle: 'italic', fontWeight: '600' },
   perfilTexto: { position: 'absolute', bottom: 100, color: C.gris, fontSize: 12 },

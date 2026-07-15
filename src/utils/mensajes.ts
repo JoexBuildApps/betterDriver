@@ -111,7 +111,18 @@ export const MENSAJES = {
   ],
 };
 
+const indices: Partial<Record<keyof typeof MENSAJES, number[]>> = {};
+
 export function mensajeAleatorio(categoria: keyof typeof MENSAJES): string {
   const lista = MENSAJES[categoria];
-  return lista[Math.floor(Math.random() * lista.length)];
+  if (!indices[categoria] || indices[categoria]!.length === 0) {
+    // Crear lista barajada
+    const arr = lista.map((_, i) => i);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    indices[categoria] = arr;
+  }
+  return lista[indices[categoria]!.pop()!];
 }
