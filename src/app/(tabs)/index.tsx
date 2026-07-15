@@ -30,27 +30,31 @@ const C = {
 function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; limite: number; size?: number }) {
   const cx = size / 2;
   const cy = size / 2;
-  const r = size * 0.42;
-  const strokeWidth = size * 0.08;
+  const r = size * 0.40;
+  const strokeWidth = size * 0.07;
 
-  const startAngle = 220;
-  const endAngle = 320;
-  const totalAngle = 360 - startAngle + endAngle;
-
-  const velocidadMax = Math.max(limite * 2, 120);
-  const porcentaje = Math.min(velocidad / velocidadMax, 1);
-  const angulo = startAngle + porcentaje * totalAngle;
+  // Arco de 135 grados a 405 grados (270 grados total, empezando abajo-izquierda)
+  const startDeg = 135;
+  const totalDeg = 270;
 
   const toRad = (deg: number) => (deg * Math.PI) / 180;
 
-  const arcPath = (from: number, to: number) => {
-    const fx = cx + r * Math.cos(toRad(from));
-    const fy = cy + r * Math.sin(toRad(from));
-    const tx = cx + r * Math.cos(toRad(to));
-    const ty = cy + r * Math.sin(toRad(to));
-    const large = to - from > 180 ? 1 : 0;
-    return `M ${fx} ${fy} A ${r} ${r} 0 ${large} 1 ${tx} ${ty}`;
+  const describeArc = (startAngle: number, endAngle: number) => {
+    const start = {
+      x: cx + r * Math.cos(toRad(startAngle)),
+      y: cy + r * Math.sin(toRad(startAngle)),
+    };
+    const end = {
+      x: cx + r * Math.cos(toRad(endAngle)),
+      y: cy + r * Math.sin(toRad(endAngle)),
+    };
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
   };
+
+  const velocidadMax = Math.max(limite * 2, 120);
+  const porcentaje = Math.min(velocidad / velocidadMax, 1);
+  const endDeg = startDeg + porcentaje * totalDeg;
 
   const getColor = () => {
     if (velocidad > limite * TOLERANCIA) return C.rojo;
@@ -58,23 +62,20 @@ function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; lim
     return C.marca;
   };
 
-  const totalArcAngle = totalAngle;
-  const filledAngle = porcentaje * totalArcAngle;
-
   return (
     <Svg width={size} height={size}>
-      {/* Arco base */}
+      {/* Arco base gris */}
       <Path
-        d={arcPath(startAngle, startAngle + totalAngle)}
+        d={describeArc(startDeg, startDeg + totalDeg)}
         fill="none"
         stroke={C.arcoBase}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
       />
-      {/* Arco activo */}
+      {/* Arco activo coloreado */}
       {velocidad > 0 && (
         <Path
-          d={arcPath(startAngle, startAngle + filledAngle)}
+          d={describeArc(startDeg, endDeg)}
           fill="none"
           stroke={getColor()}
           strokeWidth={strokeWidth}
@@ -84,10 +85,10 @@ function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; lim
       {/* Número central */}
       <SvgText
         x={cx}
-        y={cy + size * 0.06}
+        y={cy + size * 0.08}
         textAnchor="middle"
         fill={getColor()}
-        fontSize={size * 0.28}
+        fontSize={size * 0.30}
         fontWeight="200"
       >
         {velocidad}
@@ -99,6 +100,7 @@ function Velocimetro({ velocidad, limite, size = 260 }: { velocidad: number; lim
         textAnchor="middle"
         fill={C.gris}
         fontSize={size * 0.08}
+        letterSpacing={2}
       >
         km/h
       </SvgText>
@@ -521,7 +523,7 @@ const styles = StyleSheet.create({
   btnIniciarTexto: { color: '#000', fontSize: 16, fontWeight: 'bold' },
   btnTerminar: { marginTop: 20, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
   btnTerminarTexto: { color: C.rojo, fontSize: 16 },
-  cafeBtn: { position: 'absolute', bottom: 24, right: 16, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.marca },
+  cafeBtn: { position: 'absolute', bottom: 80, right: 16, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.superficie, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: C.marca },
   cafeBtnTexto: { fontSize: 22 },
   cafeBtnLabel: { color: C.marca, fontSize: 13, fontStyle: 'italic', fontWeight: '600' },
   perfilTexto: { position: 'absolute', bottom: 100, color: C.gris, fontSize: 12 },
