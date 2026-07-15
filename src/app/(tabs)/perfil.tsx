@@ -35,6 +35,16 @@ export default function Perfil() {
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
 
+  const cambiarUnidad = async (u: 'kmh' | 'mph') => {
+    const perfilActual = await AsyncStorage.getItem('perfil');
+    if (perfilActual) {
+      const parsed = JSON.parse(perfilActual);
+      parsed.unidad = u;
+      await AsyncStorage.setItem('perfil', JSON.stringify(parsed));
+      setPerfil(parsed);
+    }
+  };
+
   const seleccionarVehiculo = async (v: any) => {
     await AsyncStorage.setItem('vehiculoActivo', JSON.stringify(v));
     setVehiculoActivo(v);
@@ -151,7 +161,25 @@ export default function Perfil() {
             </TouchableOpacity>
           </View>
         ))}
-        <TouchableOpacity style={styles.btnAgregar} onPress={() => router.push('/agregar_vehiculo')}>
+        <View style={styles.unidadContainer}>
+        <Text style={styles.seccionTitulo}>Unidad de velocidad</Text>
+        <View style={styles.unidadBtns}>
+          <TouchableOpacity
+            style={[styles.unidadBtn, (perfil?.unidad || 'kmh') === 'kmh' && styles.unidadBtnActivo]}
+            onPress={() => cambiarUnidad('kmh')}
+          >
+            <Text style={[styles.unidadBtnTexto, (perfil?.unidad || 'kmh') === 'kmh' && styles.unidadBtnTextoActivo]}>km/h</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.unidadBtn, perfil?.unidad === 'mph' && styles.unidadBtnActivo]}
+            onPress={() => cambiarUnidad('mph')}
+          >
+            <Text style={[styles.unidadBtnTexto, perfil?.unidad === 'mph' && styles.unidadBtnTextoActivo]}>mph</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.btnAgregar} onPress={() => router.push('/agregar_vehiculo')}>
           <Text style={styles.btnAgregarTexto}>+ Agregar vehículo</Text>
         </TouchableOpacity>
       </View>
@@ -204,6 +232,12 @@ const styles = StyleSheet.create({
   eliminar: { color: C.rojo, fontSize: 16, padding: 8 },
   btnAgregar: { borderWidth: 1, borderColor: C.marca, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
   btnAgregarTexto: { color: C.marca, fontSize: 15 },
+  unidadContainer: { backgroundColor: C.superficie, borderRadius: 12, padding: 16, marginBottom: 16 },
+  unidadBtns: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  unidadBtn: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1a3050', alignItems: 'center' },
+  unidadBtnActivo: { borderColor: C.marca, backgroundColor: 'rgba(79,195,247,0.15)' },
+  unidadBtnTexto: { color: C.gris, fontSize: 16, fontWeight: '500' },
+  unidadBtnTextoActivo: { color: C.marca },
   btnContacto: { borderWidth: 1, borderColor: C.gris, borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 40 },
   btnContactoTexto: { color: C.gris, fontSize: 14 },
 });
