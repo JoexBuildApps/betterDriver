@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-nati
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import { Linking } from 'react-native';
+import * as Device from 'expo-device';
 import { useCallback } from 'react';
 import { getViajes, Viaje } from '../../utils/viajes';
 import { calcularScore, calcularEstrellas } from '../../utils/puntos';
@@ -156,7 +157,19 @@ export default function Perfil() {
       </View>
       <TouchableOpacity
         style={styles.btnContacto}
-        onPress={() => Linking.openURL('mailto:' + CONFIG.email + '?subject=betterDriver%20-%20Soporte')}
+        onPress={async () => {
+          const cuerpo = [
+            `Nombre: ${perfil?.nombre || 'N/A'}`,
+            `Ciudad: ${perfil?.ciudad || 'N/A'}`,
+            `Dispositivo: ${Device.modelName || 'N/A'}`,
+            `Android: ${Device.osVersion || 'N/A'}`,
+            `App version: ${CONFIG.version}`,
+            '---',
+            'Escribe tu mensaje aquí:',
+          ].join('%0A');
+          const url = 'mailto:' + CONFIG.email + '?subject=betterDriver%20-%20Soporte&body=' + cuerpo;
+          Linking.openURL(url);
+        }}
       >
         <Text style={styles.btnContactoTexto}>📧 Contacto y soporte</Text>
       </TouchableOpacity>
