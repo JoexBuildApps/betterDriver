@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, View, FlatList, Animated, TouchableOpacity, Share, Platform, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getViajes, Viaje, formatearFecha, formatearDuracion, getPuntosSemanales } from '../../utils/viajes';
@@ -101,6 +102,7 @@ async function borrarViaje(id: string, onBorrado: () => void) {
 }
 
 export default function Viajes() {
+  const insets = useSafeAreaInsets();
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [puntosSemanales, setPuntosSemanales] = useState<{ semana: string; puntos: number }[]>([]);
   const [tab, setTab] = useState<'viajes' | 'semanas'>('viajes');
@@ -120,7 +122,7 @@ export default function Viajes() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingLeft: insets.left, paddingRight: insets.right, paddingBottom: insets.bottom }]}>
       <View style={styles.tabs}>
         <TouchableOpacity
           style={[styles.tabBtn, tab === 'viajes' && styles.tabBtnActivo]}

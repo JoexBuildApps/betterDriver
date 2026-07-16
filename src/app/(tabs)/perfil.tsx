@@ -1,6 +1,7 @@
 import { CONFIG } from '../../utils/config';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import { Linking } from 'react-native';
@@ -21,6 +22,7 @@ const C = {
 };
 
 export default function Perfil() {
+  const insets = useSafeAreaInsets();
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [perfil, setPerfil] = useState<any>(null);
   const [vehiculos, setVehiculos] = useState<any[]>([]);
@@ -98,7 +100,7 @@ export default function Perfil() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { paddingLeft: insets.left, paddingRight: insets.right }]} contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarTexto}>{perfil?.nombre?.charAt(0).toUpperCase() || '?'}</Text>

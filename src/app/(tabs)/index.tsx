@@ -133,6 +133,8 @@ export default function Conducir() {
   const distanciaM = useRef(0);
   const ultimaPos = useRef<{ lat: number; lon: number } | null>(null);
   const historialVelocidad = useRef<number[]>([]);
+  const timerDesaceleracion = useRef<any>(null);
+  const velocidadDisplay = useRef(0);
 
   const flashAnim = useRef(new Animated.Value(1)).current;
   const alertaActiva = useRef(false);
@@ -267,9 +269,29 @@ export default function Conducir() {
           historialVelocidad.current.push(rawKmh);
           if (historialVelocidad.current.length > 3) historialVelocidad.current.shift();
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
-          const kmh = promRaw < 5 ? 0 : Math.round(promRaw);
+          const kmhReal = promRaw < 5 ? 0 : Math.round(promRaw);
 
-          setVelocidad(kmh);
+          if (kmhReal === 0 && velocidadDisplay.current > 0) {
+            // Desaceleracion gradual
+            if (!timerDesaceleracion.current) {
+              timerDesaceleracion.current = setInterval(() => {
+                velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 5);
+                setVelocidad(velocidadDisplay.current);
+                if (velocidadDisplay.current <= 0) {
+                  clearInterval(timerDesaceleracion.current);
+                  timerDesaceleracion.current = null;
+                }
+              }, 500);
+            }
+          } else {
+            if (timerDesaceleracion.current) {
+              clearInterval(timerDesaceleracion.current);
+              timerDesaceleracion.current = null;
+            }
+            velocidadDisplay.current = kmhReal;
+            setVelocidad(kmhReal);
+          }
+          const kmh = kmhReal;
 
           if (kmh > 0 && viajeActivo) {
             if (ultimaPos.current) {
