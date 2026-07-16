@@ -134,6 +134,7 @@ export default function Conducir() {
   const ultimaPos = useRef<{ lat: number; lon: number } | null>(null);
   const historialVelocidad = useRef<number[]>([]);
   const timerDesaceleracion = useRef<any>(null);
+  const segundosBajoVelocidad = useRef(0);
   const velocidadDisplay = useRef(0);
 
   const flashAnim = useRef(new Animated.Value(1)).current;
@@ -269,21 +270,24 @@ export default function Conducir() {
           historialVelocidad.current.push(rawKmh);
           if (historialVelocidad.current.length > 3) historialVelocidad.current.shift();
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
-          const kmhReal = promRaw < 5 ? 0 : Math.round(promRaw);
+          const kmhReal = Math.round(promRaw);
 
-          if (kmhReal === 0 && velocidadDisplay.current > 0) {
-            // Desaceleracion gradual
-            if (!timerDesaceleracion.current) {
-              timerDesaceleracion.current = setInterval(() => {
-                velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 5);
-                setVelocidad(velocidadDisplay.current);
-                if (velocidadDisplay.current <= 0) {
-                  clearInterval(timerDesaceleracion.current);
-                  timerDesaceleracion.current = null;
-                }
-              }, 500);
+          if (kmhReal < 8) {
+            segundosBajoVelocidad.current++;
+            if (segundosBajoVelocidad.current >= 3) {
+              if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
+                timerDesaceleracion.current = setInterval(() => {
+                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 5);
+                  setVelocidad(velocidadDisplay.current);
+                  if (velocidadDisplay.current <= 0) {
+                    clearInterval(timerDesaceleracion.current);
+                    timerDesaceleracion.current = null;
+                  }
+                }, 300);
+              }
             }
           } else {
+            segundosBajoVelocidad.current = 0;
             if (timerDesaceleracion.current) {
               clearInterval(timerDesaceleracion.current);
               timerDesaceleracion.current = null;
@@ -291,7 +295,7 @@ export default function Conducir() {
             velocidadDisplay.current = kmhReal;
             setVelocidad(kmhReal);
           }
-          const kmh = kmhReal;
+          const kmh = kmhReal < 8 && segundosBajoVelocidad.current >= 3 ? 0 : kmhReal;
 
           if (kmh > 0 && viajeActivo) {
             if (ultimaPos.current) {
@@ -543,7 +547,7 @@ const styles = StyleSheet.create({
   limiteBadgeTexto: { color: C.blanco, fontSize: 16, fontWeight: '600' },
   limiteLabel: { color: C.gris, fontSize: 14 },
   estado: { fontSize: 13, marginTop: 10, letterSpacing: 1, textTransform: 'uppercase' },
-  mensajeContainer: { marginTop: 12, marginHorizontal: 16, backgroundColor: C.superficie, borderRadius: 12, padding: 14, borderLeftWidth: 3, borderLeftColor: C.marca },
+  mensajeContainer: { position: 'absolute', top: 90, left: 16, right: 16, backgroundColor: C.superficie, borderRadius: 12, padding: 14, borderLeftWidth: 3, borderLeftColor: C.marca, zIndex: 100 },
   mensajeTexto: { color: C.blanco, fontSize: 13, lineHeight: 20 },
   btnIniciar: { marginTop: 20, backgroundColor: C.verde, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 24 },
   btnIniciarTexto: { color: '#000', fontSize: 16, fontWeight: 'bold' },
