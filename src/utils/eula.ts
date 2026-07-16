@@ -1,6 +1,6 @@
 export const EULA_ES = `TÉRMINOS Y CONDITIONS DE USO — betterDriver
 Última actualización: julio de 2026
-Desarrollador: JoeBuildStuff, persona natural, Colombia.
+Desarrollador: JoeBuildsStuff, persona natural, Colombia.
 
 1. ACEPTACIÓN
 Al descargar, instalar o usar betterDriver, usted acepta estos términos en su totalidad. Si no está de acuerdo, no use la aplicación.
@@ -15,7 +15,7 @@ La velocidad mostrada se calcula mediante el GPS del dispositivo móvil y puede 
 El conductor es el único responsable de su conducción en todo momento, conforme al artículo 55 del Código Nacional de Tránsito. El uso de betterDriver no exime al conductor de cumplir con las normas de tránsito vigentes, respetar la señalización vial, ni actuar con diligencia y cuidado al volante.
 
 5. LIMITACIÓN DE RESPONSABILIDAD
-En la máxima medida permitida por la ley colombiana, JoeBuildStuff no será responsable por ningún daño directo, indirecto, incidental, especial o consecuente derivado del uso o imposibilidad de uso de betterDriver, incluyendo pero no limitado a: accidentes de tránsito, lesiones personales, daños a terceros, multas, fotomultas, comparendos, pérdida de datos o daños al dispositivo.
+En la máxima medida permitida por la ley colombiana, JoeBuildsStuff no será responsable por ningún daño directo, indirecto, incidental, especial o consecuente derivado del uso o imposibilidad de uso de betterDriver, incluyendo pero no limitado a: accidentes de tránsito, lesiones personales, daños a terceros, multas, fotomultas, comparendos, pérdida de datos o daños al dispositivo.
 
 6. EXENCIÓN DE GARANTÍAS
 betterDriver se proporciona "tal cual" y "según disponibilidad", sin garantías de ningún tipo, expresas o implícitas.
@@ -30,11 +30,11 @@ betterDriver almacena datos de uso localmente en su dispositivo. No recopila, tr
 Estos términos se rigen por las leyes de la República de Colombia. Cualquier disputa será sometida a la jurisdicción de los tribunales competentes de Bogotá D.C., Colombia.
 
 10. CONTACTO
-josephcroft@gmail.com`;
+soporte@joebuildsstuff.net`;
 
 export const EULA_EN = `TERMS AND CONDITIONS OF USE — betterDriver
 Last updated: July 2026
-Developer: JoeBuildStuff, individual developer.
+Developer: JoeBuildsStuff, individual developer.
 
 1. ACCEPTANCE
 By downloading, installing, or using betterDriver, you agree to these terms in full. If you do not agree, do not use the application.
@@ -49,7 +49,7 @@ Speed readings are derived from your mobile device's GPS and may differ from you
 The driver bears sole and full responsibility for their driving at all times. Use of betterDriver does not substitute for compliance with applicable traffic laws, posted speed limits, or safe driving practices.
 
 5. LIMITATION OF LIABILITY
-To the fullest extent permitted by applicable law, JoeBuildStuff shall not be liable for any direct, indirect, incidental, special, or consequential damages arising from the use or inability to use betterDriver, including but not limited to: traffic accidents, personal injury, property damage, fines, or device damage.
+To the fullest extent permitted by applicable law, JoeBuildsStuff shall not be liable for any direct, indirect, incidental, special, or consequential damages arising from the use or inability to use betterDriver, including but not limited to: traffic accidents, personal injury, property damage, fines, or device damage.
 
 6. DISCLAIMER OF WARRANTIES
 betterDriver is provided "as is" and "as available" without warranties of any kind, either express or implied.
@@ -61,11 +61,11 @@ Do not interact with your device screen while driving. Configure the application
 betterDriver stores trip data locally on your device. No personally identifiable information is collected, transmitted, or shared with third parties.
 
 9. CONTACT
-josephcroft@gmail.com`;
+soporte@joebuildsstuff.net`;
 
 export const EULA_USA = `TERMS AND CONDITIONS OF USE — betterDriver (Delaware)
 Last updated: July 2026
-Developer: JoeBuildStuff, individual.
+Developer: JoeBuildsStuff, individual.
 
 1. ACCEPTANCE OF TERMS
 By accessing or using betterDriver, you agree to be bound by these Terms and Conditions.
@@ -83,7 +83,7 @@ You expressly acknowledge and agree that your use of betterDriver is at your sol
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL JOSE LUIS VASQUEZ GIRALDO BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO PERSONAL INJURY, PROPERTY DAMAGE, OR ANY OTHER DAMAGES ARISING OUT OF YOUR USE OF BETTERDRIVER. IN NO EVENT SHALL THE DEVELOPER'S TOTAL LIABILITY EXCEED ONE DOLLAR (USD $1.00).
 
 6. INDEMNIFICATION
-You agree to indemnify and hold harmless JoeBuildStuff from any claims, damages, or expenses arising out of your use of betterDriver or violation of these Terms.
+You agree to indemnify and hold harmless JoeBuildsStuff from any claims, damages, or expenses arising out of your use of betterDriver or violation of these Terms.
 
 7. DISCLAIMER OF WARRANTIES
 BETTERDRIVER IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT ANY WARRANTIES OF ANY KIND.
@@ -95,4 +95,4 @@ You agree to use betterDriver only in compliance with all applicable laws. You a
 These Terms shall be governed by the laws of the State of Delaware, United States. Disputes shall be resolved through binding arbitration under the American Arbitration Association.
 
 10. CONTACT
-josephcroft@gmail.com`;
+soporte@joebuildsstuff.net`;
