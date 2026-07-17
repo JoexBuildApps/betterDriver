@@ -8,6 +8,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { guardarViaje, Evento, PuntoGPS } from '../../utils/viajes';
+import { Accelerometer } from 'expo-sensors';
 import { mensajeAleatorio } from '../../utils/mensajes';
 import { CONFIG } from '../../utils/config';
 
@@ -135,6 +136,8 @@ export default function Conducir() {
   const historialVelocidad = useRef<number[]>([]);
   const timerDesaceleracion = useRef<any>(null);
   const segundosBajoVelocidad = useRef(0);
+  const accelMagnitud = useRef(0);
+  const quietoAcelerometro = useRef(false);
   const velocidadDisplay = useRef(0);
 
   const flashAnim = useRef(new Animated.Value(1)).current;
@@ -257,6 +260,17 @@ export default function Conducir() {
   };
 
   useEffect(() => {
+    Accelerometer.setUpdateInterval(500);
+    const accelSub = Accelerometer.addListener(({ x, y, z }) => {
+      const magnitud = Math.sqrt(x * x + y * y + z * z);
+      // Magnitud ~1 = quieto (solo gravedad), >1.1 = movimiento
+      accelMagnitud.current = magnitud;
+      quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.12;
+    });
+    return () => accelSub.remove();
+  }, []);
+
+  useEffect(() => {
     let suscripcion: any;
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -272,21 +286,42 @@ export default function Conducir() {
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
           const kmhReal = Math.round(promRaw);
 
-          if (kmhReal < 8) {
+          // Fusion GPS + Acelerometro
+          const gpsLento = kmhReal < 8;
+          const telefonoQuieto = quietoAcelerometro.current;
+
+          if (gpsLento && telefonoQuieto) {
+            // Acelerometro confirma que estamos quietos - bajar a 0 rapido
             segundosBajoVelocidad.current++;
-            if (segundosBajoVelocidad.current >= 3) {
+            if (segundosBajoVelocidad.current >= 2) {
               if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
                 timerDesaceleracion.current = setInterval(() => {
-                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 5);
+                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 8);
                   setVelocidad(velocidadDisplay.current);
                   if (velocidadDisplay.current <= 0) {
                     clearInterval(timerDesaceleracion.current);
                     timerDesaceleracion.current = null;
                   }
-                }, 300);
+                }, 200);
+              }
+            }
+          } else if (gpsLento && !telefonoQuieto) {
+            // GPS lento pero acelerometro dice que nos movemos - esperar mas
+            segundosBajoVelocidad.current++;
+            if (segundosBajoVelocidad.current >= 5) {
+              if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
+                timerDesaceleracion.current = setInterval(() => {
+                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 3);
+                  setVelocidad(velocidadDisplay.current);
+                  if (velocidadDisplay.current <= 0) {
+                    clearInterval(timerDesaceleracion.current);
+                    timerDesaceleracion.current = null;
+                  }
+                }, 400);
               }
             }
           } else {
+            // Nos estamos moviendo - velocidad real
             segundosBajoVelocidad.current = 0;
             if (timerDesaceleracion.current) {
               clearInterval(timerDesaceleracion.current);
@@ -295,7 +330,7 @@ export default function Conducir() {
             velocidadDisplay.current = kmhReal;
             setVelocidad(kmhReal);
           }
-          const kmh = kmhReal < 8 && segundosBajoVelocidad.current >= 3 ? 0 : kmhReal;
+          const kmh = (gpsLento && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
 
           if (kmh > 0 && viajeActivo) {
             if (ultimaPos.current) {

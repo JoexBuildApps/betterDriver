@@ -1,6 +1,6 @@
 import { CONFIG } from '../../utils/config';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
@@ -27,6 +27,9 @@ export default function Perfil() {
   const [perfil, setPerfil] = useState<any>(null);
   const [vehiculos, setVehiculos] = useState<any[]>([]);
   const [vehiculoActivo, setVehiculoActivo] = useState<any>(null);
+  const [editando, setEditando] = useState(false);
+  const [nombreEdit, setNombreEdit] = useState('');
+  const [ciudadEdit, setCiudadEdit] = useState('');
 
   const cargarDatos = async () => {
     getViajes().then(setViajes);
@@ -36,6 +39,19 @@ export default function Perfil() {
   };
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
+
+  const abrirEditor = () => {
+    setNombreEdit(perfil?.nombre || '');
+    setCiudadEdit(perfil?.ciudad || '');
+    setEditando(true);
+  };
+
+  const guardarEdicion = async () => {
+    const nuevo = { ...perfil, nombre: nombreEdit.trim(), ciudad: ciudadEdit.trim() };
+    await AsyncStorage.setItem('perfil', JSON.stringify(nuevo));
+    setPerfil(nuevo);
+    setEditando(false);
+  };
 
   const cambiarUnidad = async (u: 'kmh' | 'mph') => {
     const perfilActual = await AsyncStorage.getItem('perfil');
@@ -105,8 +121,13 @@ export default function Perfil() {
         <View style={styles.avatar}>
           <Text style={styles.avatarTexto}>{perfil?.nombre?.charAt(0).toUpperCase() || '?'}</Text>
         </View>
-        <View>
-          <Text style={styles.nombre}>{perfil?.nombre || 'Conductor'}</Text>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.nombre}>{perfil?.nombre || 'Conductor'}</Text>
+            <TouchableOpacity onPress={abrirEditor}>
+              <Text style={{ color: C.marca, fontSize: 13 }}>Editar</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.ciudad}>{perfil?.ciudad || ''}</Text>
           {totalViajes > 0 && <Text style={[styles.scoreGeneral, { color: colorScore() }]}>{scoreGeneral}</Text>}
         </View>
@@ -204,6 +225,34 @@ export default function Perfil() {
         <Text style={styles.btnContactoTexto}>📧 Contacto y soporte</Text>
       </TouchableOpacity>
 
+      <Modal visible={editando} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitulo}>Editar perfil</Text>
+            <TextInput
+              style={styles.input}
+              value={nombreEdit}
+              onChangeText={setNombreEdit}
+              placeholder="Nombre"
+              placeholderTextColor={C.gris}
+            />
+            <TextInput
+              style={styles.input}
+              value={ciudadEdit}
+              onChangeText={setCiudadEdit}
+              placeholder="Ciudad"
+              placeholderTextColor={C.gris}
+            />
+            <TouchableOpacity style={styles.btnGuardar} onPress={guardarEdicion}>
+              <Text style={styles.btnGuardarTexto}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnCancelar} onPress={() => setEditando(false)}>
+              <Text style={styles.btnCancelarTexto}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -240,6 +289,14 @@ const styles = StyleSheet.create({
   unidadBtnActivo: { borderColor: C.marca, backgroundColor: 'rgba(79,195,247,0.15)' },
   unidadBtnTexto: { color: C.gris, fontSize: 16, fontWeight: '500' },
   unidadBtnTextoActivo: { color: C.marca },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
+  modalBox: { backgroundColor: C.superficie, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca, gap: 12 },
+  modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600', marginBottom: 8 },
+  input: { backgroundColor: '#1a3050', color: C.blanco, fontSize: 16, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1a3050' },
+  btnGuardar: { backgroundColor: C.marca, padding: 14, borderRadius: 12, alignItems: 'center' },
+  btnGuardarTexto: { color: C.fondo, fontSize: 15, fontWeight: 'bold' },
+  btnCancelar: { alignItems: 'center', padding: 10 },
+  btnCancelarTexto: { color: C.gris, fontSize: 14 },
   btnContacto: { borderWidth: 1, borderColor: C.gris, borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 40 },
   btnContactoTexto: { color: C.gris, fontSize: 14 },
 });
