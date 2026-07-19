@@ -77,6 +77,8 @@ export default function Conducir() {
   const [limiteManual, setLimiteManual] = useState('');
   const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
   const [modoRoaming, setModoRoaming] = useState(false);
+  const [modoDebug, setModoDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ gpsRaw: 0, gpsProm: 0, accel: 0, quieto: false, segundosBajo: 0 });
   const [mostrarSelectorModo, setMostrarSelectorModo] = useState(false);
   const origenRef = useRef<string | undefined>(undefined);
 
@@ -266,6 +268,15 @@ export default function Conducir() {
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
           const kmhReal = Math.round(promRaw);
 
+          if (modoDebug) {
+            setDebugInfo({
+              gpsRaw: Math.round(rawKmh),
+              gpsProm: kmhReal,
+              accel: Math.round(accelMagnitud.current * 100) / 100,
+              quieto: quietoAcelerometro.current,
+              segundosBajo: segundosBajoVelocidad.current,
+            });
+          }
           const gpsLento = kmhReal < 8;
           const telefonoQuieto = quietoAcelerometro.current;
 
@@ -443,6 +454,22 @@ export default function Conducir() {
             </TouchableOpacity>
           )}
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
+
+          <TouchableOpacity style={styles.debugBtn} onPress={() => setModoDebug(!modoDebug)}>
+            <Text style={styles.debugBtnTexto}>{modoDebug ? '🔴 Debug ON' : '⚙️ Debug'}</Text>
+          </TouchableOpacity>
+
+          {modoDebug && (
+            <View style={styles.debugOverlay}>
+              <Text style={styles.debugTitulo}>📡 GPS + Acelerómetro</Text>
+              <Text style={styles.debugLinea}>GPS raw: <Text style={styles.debugValor}>{debugInfo.gpsRaw} km/h</Text></Text>
+              <Text style={styles.debugLinea}>GPS prom (5): <Text style={styles.debugValor}>{debugInfo.gpsProm} km/h</Text></Text>
+              <Text style={styles.debugLinea}>Accel magnitud: <Text style={styles.debugValor}>{debugInfo.accel}</Text> (1.0 = quieto)</Text>
+              <Text style={styles.debugLinea}>Teléfono quieto: <Text style={[styles.debugValor, { color: debugInfo.quieto ? '#30D158' : '#FF5C5C' }]}>{debugInfo.quieto ? 'SÍ' : 'NO'}</Text></Text>
+              <Text style={styles.debugLinea}>Segundos bajo vel: <Text style={styles.debugValor}>{debugInfo.segundosBajo}</Text></Text>
+              <Text style={styles.debugLinea}>Velocidad display: <Text style={styles.debugValor}>{velocidad} km/h</Text></Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -590,6 +617,12 @@ const styles = StyleSheet.create({
   modoBtnIcon: { fontSize: 28 },
   modoBtnTitulo: { color: C.marca, fontSize: 16, fontWeight: '600' },
   modoBtnSub: { color: C.gris, fontSize: 12, marginTop: 2 },
+  debugBtn: { marginTop: 8, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#223452' },
+  debugBtnTexto: { color: '#607d8b', fontSize: 11 },
+  debugOverlay: { position: 'absolute', bottom: 100, left: 12, right: 12, backgroundColor: 'rgba(7,17,31,0.95)', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#2EE6C5', zIndex: 200 },
+  debugTitulo: { color: '#2EE6C5', fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  debugLinea: { color: '#A4B2C5', fontSize: 12, marginBottom: 4 },
+  debugValor: { color: '#F4F8FC', fontWeight: '600' },
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
   btnRoamingTexto: { color: C.gris, fontSize: 13 },
