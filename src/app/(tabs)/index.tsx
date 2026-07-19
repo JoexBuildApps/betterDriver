@@ -212,7 +212,6 @@ export default function Conducir() {
     setModoRoaming(false);
     setVelocidad(0);
     velocidadDisplay.current = 0;
-    setTimeout(() => setMostrarSelectorModo(true), 300);
   };
 
   const confirmarManual = () => {
@@ -238,7 +237,7 @@ export default function Conducir() {
     if (timerParado.current) clearTimeout(timerParado.current);
     if (timerMensajeAleatorio.current) clearTimeout(timerMensajeAleatorio.current);
     const duracion = Math.round((Date.now() - inicioViaje.current) / 1000);
-    if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); setTimeout(() => setMostrarSelectorModo(true), 300); return; }
+    if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); return; }
 
     const velocidadPromedio = muestrasVelocidad.current > 0 ? Math.round(totalVelocidades.current / muestrasVelocidad.current) : 0;
     let destinoBarrio: string | undefined;
@@ -263,7 +262,6 @@ export default function Conducir() {
     });
     setViajeActivo(false);
     setTopSpeed(0);
-    setTimeout(() => setMostrarSelectorModo(true), 300);
   };
 
   useEffect(() => {
@@ -699,7 +697,7 @@ const styles = StyleSheet.create({
   modoBtnSubCompacto: { color: C.gris, fontSize: 11 },
   btnEmpezar: { padding: 16, borderRadius: 32, alignItems: 'center', marginTop: 4 },
   btnEmpezarTexto: { color: C.fondo, fontSize: 16, fontWeight: 'bold' },
-  modoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.marca, marginBottom: 12 },
+  modoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', marginBottom: 12 },
   modoBtnIcon: { fontSize: 28 },
   modoBtnTitulo: { color: C.marca, fontSize: 16, fontWeight: '600' },
   modoBtnSub: { color: C.gris, fontSize: 12, marginTop: 2 },
@@ -709,13 +707,13 @@ const styles = StyleSheet.create({
   debugTitulo: { color: '#2EE6C5', fontSize: 13, fontWeight: '600', marginBottom: 8 },
   debugLinea: { color: '#A4B2C5', fontSize: 12, marginBottom: 4 },
   debugValor: { color: '#F4F8FC', fontWeight: '600' },
-  btnModoLibre: { flex: 1, paddingVertical: 14, borderRadius: 32, borderWidth: 1, borderColor: C.marca, alignItems: 'center' },
+  btnModoLibre: { flex: 1, paddingVertical: 14, borderRadius: 32, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', alignItems: 'center' },
   btnModoLibreTexto: { color: C.marca, fontSize: 15, fontWeight: '500' },
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
   btnRoamingTexto: { color: C.gris, fontSize: 13 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
-  modalBox: { backgroundColor: C.superficie, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca },
+  modalBox: { backgroundColor: 'rgba(18, 31, 55, 0.97)', borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)' },
   modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600', marginBottom: 12 },
   limitesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 16 },
   limiteOpcion: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: C.divider, alignItems: 'center', justifyContent: 'center' },

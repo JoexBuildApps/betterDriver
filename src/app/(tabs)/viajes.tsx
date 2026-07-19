@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   semanaPuntos: { color: C.verde, fontSize: 32, fontWeight: 'bold' },
   semanaComparacion: { fontSize: 12, marginTop: 4 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
-  modalBox: { backgroundColor: C.superficie2, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca, gap: 12 },
+  modalBox: { backgroundColor: 'rgba(18, 31, 55, 0.97)', borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', gap: 12 },
   modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600' },
   vehiculoOpcion: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1a3050', marginBottom: 8 },
   vehiculoOpcionActiva: { borderColor: C.marca, backgroundColor: 'rgba(79,195,247,0.15)' },
