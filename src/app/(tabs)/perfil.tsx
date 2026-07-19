@@ -150,8 +150,8 @@ export default function Perfil() {
       } else {
         Alert.alert('Exportado', `Backup guardado en: ${path}`);
       }
-    } catch (e) {
-      Alert.alert('Error', 'No se pudo exportar los datos');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || String(e));
     }
   };
 
@@ -327,15 +327,27 @@ export default function Perfil() {
       {/* Modal editar vehiculo */}
       {/* Debug GPS + Acelerometro */}
       <View style={[styles.seccion, { marginTop: 8 }]}>
-        <Text style={styles.seccionTitulo}>Diagnóstico del dispositivo</Text>
-        <Text style={{ color: C.gris, fontSize: 11, marginBottom: 10 }}>Valores actualizados mientras conduces.</Text>
-        <View style={{ gap: 8 }}>
-          <Text style={styles.debugLinea}>📡 GPS raw: <Text style={styles.debugValor}>{debugData.gpsRaw ?? '--'} km/h</Text></Text>
-          <Text style={styles.debugLinea}>📡 GPS prom: <Text style={styles.debugValor}>{debugData.gpsProm ?? '--'} km/h</Text></Text>
-          <Text style={styles.debugLinea}>📳 Accel magnitud: <Text style={styles.debugValor}>{debugData.accel ?? '--'}</Text> (1.0 = quieto)</Text>
-          <Text style={styles.debugLinea}>📳 Teléfono quieto: <Text style={[styles.debugValor, { color: debugData.quieto ? C.verde : C.rojo }]}>{debugData.quieto === undefined ? '--' : debugData.quieto ? 'SÍ' : 'NO'}</Text></Text>
-          <Text style={styles.debugLinea}>⏱ Segundos bajo vel: <Text style={styles.debugValor}>{debugData.segundosBajo ?? '--'}</Text></Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={styles.seccionTitulo}>Diagnóstico del dispositivo</Text>
+          <TouchableOpacity
+            style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: modoDebug ? C.rojo : C.divider }}
+            onPress={() => setModoDebug(!modoDebug)}
+          >
+            <Text style={{ color: modoDebug ? C.rojo : C.gris, fontSize: 12 }}>{modoDebug ? '🔴 ON' : '⚙️ OFF'}</Text>
+          </TouchableOpacity>
         </View>
+        {modoDebug ? (
+          <View style={{ gap: 6 }}>
+            <Text style={styles.debugLinea}>📡 GPS raw: <Text style={styles.debugValor}>{debugInfo.gpsRaw ?? '--'} km/h</Text></Text>
+            <Text style={styles.debugLinea}>📡 GPS prom: <Text style={styles.debugValor}>{debugInfo.gpsProm ?? '--'} km/h</Text></Text>
+            <Text style={styles.debugLinea}>📳 Accel: <Text style={styles.debugValor}>{debugInfo.accel ?? '--'}</Text> (1.0 = quieto)</Text>
+            <Text style={styles.debugLinea}>📳 Quieto: <Text style={[styles.debugValor, { color: debugInfo.quieto ? C.verde : C.rojo }]}>{debugInfo.quieto === undefined ? '--' : debugInfo.quieto ? 'SÍ' : 'NO'}</Text></Text>
+            <Text style={styles.debugLinea}>⏱ Seg bajo vel: <Text style={styles.debugValor}>{debugInfo.segundosBajo ?? '--'}</Text></Text>
+            <Text style={{ color: C.gris, fontSize: 11, marginTop: 4 }}>Solo activo durante viaje o modo libre. Útil para detectar problemas con el GPS o acelerómetro de tu dispositivo.</Text>
+          </View>
+        ) : (
+          <Text style={{ color: C.gris, fontSize: 12 }}>Activa para ver GPS y acelerómetro en tiempo real mientras conduces.</Text>
+        )}
       </View>
 
       <Modal visible={editandoVehiculo !== null} transparent animationType="fade">
