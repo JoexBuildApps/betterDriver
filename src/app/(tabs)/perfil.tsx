@@ -20,6 +20,8 @@ export default function Perfil() {
   const [vehiculoActivo, setVehiculoActivo] = useState<any>(null);
   const [editando, setEditando] = useState(false);
   const [editandoVehiculo, setEditandoVehiculo] = useState<number | null>(null);
+  const [modoDebug, setModoDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>({});
   const [debugData, setDebugData] = useState<any>({});
   const [marcaVEdit, setMarcaVEdit] = useState('');
   const [modeloVEdit, setModeloVEdit] = useState('');
