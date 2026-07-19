@@ -408,17 +408,23 @@ export default function Conducir() {
     </View>
   );
 
-  const BotonesViaje = () => (
-    !viajeActivo ? (
-      <TouchableOpacity style={styles.btnIniciar} onPress={iniciarModalLimite}>
-        <Text style={styles.btnIniciarTexto}>Iniciar viaje</Text>
-      </TouchableOpacity>
-    ) : (
-      <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
-        <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
-      </TouchableOpacity>
-    )
-  );
+  const BotonesViaje = () => {
+    if (modoRoaming) {
+      return (
+        <TouchableOpacity style={styles.btnRoaming} onPress={detenerRoaming}>
+          <Text style={[styles.btnRoamingTexto, { color: C.marca }]}>🎙 Modo libre activo · Detener</Text>
+        </TouchableOpacity>
+      );
+    }
+    if (viajeActivo) {
+      return (
+        <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
+          <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
+        </TouchableOpacity>
+      );
+    }
+    return null;
+  };
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
@@ -460,11 +466,7 @@ export default function Conducir() {
             </View>
           )}
           <BotonesViaje />
-          {modoRoaming && (
-            <TouchableOpacity style={styles.btnRoaming} onPress={detenerRoaming}>
-              <Text style={styles.btnRoamingTexto}>🎙 Modo libre activo · Detener</Text>
-            </TouchableOpacity>
-          )}
+
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
 
           <TouchableOpacity style={styles.debugBtn} onPress={() => setModoDebug(!modoDebug)}>

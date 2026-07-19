@@ -307,6 +307,16 @@ export default function Perfil() {
       </View>
 
       {/* Modal editar vehiculo */}
+      {/* Debug GPS + Acelerometro */}
+      <View style={[styles.seccion, { marginTop: 8 }]}>
+        <Text style={styles.seccionTitulo}>Diagnóstico del dispositivo</Text>
+        <View style={{ gap: 6 }}>
+          <Text style={styles.debugLinea}>📡 GPS: <Text style={styles.debugValor}>activo</Text></Text>
+          <Text style={styles.debugLinea}>📳 Acelerómetro: <Text style={styles.debugValor}>ver en pantalla conducir</Text></Text>
+          <Text style={{ color: C.gris, fontSize: 11, marginTop: 4 }}>Activa el modo debug en la pantalla de conducción para ver los valores en tiempo real.</Text>
+        </View>
+      </View>
+
       <Modal visible={editandoVehiculo !== null} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -388,6 +398,8 @@ const styles = StyleSheet.create({
   btnDatos: { borderWidth: 1, borderColor: C.divider, borderRadius: 12, padding: 14 },
   btnDatosTexto: { color: C.blanco, fontSize: 14, fontWeight: '500', marginBottom: 2 },
   btnDatosDesc: { color: C.gris, fontSize: 12 },
+  debugLinea: { color: C.gris, fontSize: 13 },
+  debugValor: { color: C.blanco, fontWeight: '600' },
   btnContacto: { borderWidth: 1, borderColor: C.divider, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8, marginBottom: 12 },
   btnContactoTexto: { color: C.gris, fontSize: 14 },
   version: { color: C.divider, fontSize: 12, textAlign: 'center' },

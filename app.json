@@ -27,7 +27,12 @@
         "ACCESS_COARSE_LOCATION",
         "WAKE_LOCK",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "abiFilters": [
+        "arm64-v8a"
       ]
     },
     "web": {
