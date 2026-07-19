@@ -79,6 +79,8 @@ export default function Conducir() {
   const [modoRoaming, setModoRoaming] = useState(false);
 
   const [mostrarSelectorModo, setMostrarSelectorModo] = useState(false);
+  const [modoDebug, setModoDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ gpsRaw: 0, gpsProm: 0, accel: 0, quieto: false, segundosBajo: 0 });
   const origenRef = useRef<string | undefined>(undefined);
 
   const segundosBien = useRef(0);
@@ -131,12 +133,9 @@ export default function Conducir() {
       accelMagnitud.current = magnitud;
       quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.12;
       const quieto = Math.abs(magnitud - 1) < 0.12;
-      setDebugInfo(prev => ({
-        ...prev,
-        accel: Math.round(magnitud * 100) / 100,
-        quieto,
-      }));
+      quietoAcelerometro.current = quieto;
       AsyncStorage.setItem('debugAccel', JSON.stringify({ accel: Math.round(magnitud * 100) / 100, quieto }));
+      setDebugInfo(prev => ({ ...prev, accel: Math.round(magnitud * 100) / 100, quieto }));
     });
     return () => accelSub.remove();
   }, [viajeActivo, modoRoaming]);
@@ -239,7 +238,7 @@ export default function Conducir() {
     if (timerParado.current) clearTimeout(timerParado.current);
     if (timerMensajeAleatorio.current) clearTimeout(timerMensajeAleatorio.current);
     const duracion = Math.round((Date.now() - inicioViaje.current) / 1000);
-    if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); return; }
+    if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); setTimeout(() => setMostrarSelectorModo(true), 300); return; }
 
     const velocidadPromedio = muestrasVelocidad.current > 0 ? Math.round(totalVelocidades.current / muestrasVelocidad.current) : 0;
     let destinoBarrio: string | undefined;
@@ -282,11 +281,10 @@ export default function Conducir() {
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
           const kmhReal = Math.round(promRaw);
 
-          AsyncStorage.setItem('debugGPS', JSON.stringify({
-            gpsRaw: Math.round(rawKmh),
-            gpsProm: kmhReal,
-            segundosBajo: segundosBajoVelocidad.current,
-          }));
+          AsyncStorage.setItem('debugGPS', JSON.stringify({ gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
+          if (modoDebug) {
+            setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
+          }
           const gpsLento = kmhReal < 8;
           const telefonoQuieto = quietoAcelerometro.current;
 

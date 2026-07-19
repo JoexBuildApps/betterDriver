@@ -28,6 +28,16 @@ export default function Perfil() {
   const [nombreEdit, setNombreEdit] = useState('');
   const [ciudadEdit, setCiudadEdit] = useState('');
 
+  useEffect(() => {
+    if (!modoDebug) return;
+    const interval = setInterval(async () => {
+      const gps = await AsyncStorage.getItem('debugGPS');
+      const accel = await AsyncStorage.getItem('debugAccel');
+      setDebugInfo({ ...(gps ? JSON.parse(gps) : {}), ...(accel ? JSON.parse(accel) : {}) });
+    }, 500);
+    return () => clearInterval(interval);
+  }, [modoDebug]);
+
   const cargarDatos = async () => {
     getViajes().then(setViajes);
     AsyncStorage.getItem('perfil').then(p => { if (p) setPerfil(JSON.parse(p)); });
