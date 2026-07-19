@@ -77,8 +77,7 @@ export default function Conducir() {
   const [limiteManual, setLimiteManual] = useState('');
   const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
   const [modoRoaming, setModoRoaming] = useState(false);
-  const [modoDebug, setModoDebug] = useState(false);
-  const [debugInfo, setDebugInfo] = useState({ gpsRaw: 0, gpsProm: 0, accel: 0, quieto: false, segundosBajo: 0 });
+
   const [mostrarSelectorModo, setMostrarSelectorModo] = useState(false);
   const origenRef = useRef<string | undefined>(undefined);
 
@@ -125,6 +124,7 @@ export default function Conducir() {
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
+    if (!viajeActivo && !modoRoaming) return;
     Accelerometer.setUpdateInterval(200);
     const accelSub = Accelerometer.addListener(({ x, y, z }) => {
       const magnitud = Math.sqrt(x * x + y * y + z * z);
@@ -139,7 +139,7 @@ export default function Conducir() {
       AsyncStorage.setItem('debugAccel', JSON.stringify({ accel: Math.round(magnitud * 100) / 100, quieto }));
     });
     return () => accelSub.remove();
-  }, []);
+  }, [viajeActivo, modoRoaming]);
 
   const flashearTop = () => {
     setAlertaTop(true);

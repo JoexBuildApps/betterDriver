@@ -33,9 +33,11 @@ export default function Perfil() {
     AsyncStorage.getItem('perfil').then(p => { if (p) setPerfil(JSON.parse(p)); });
     AsyncStorage.getItem('vehiculos').then(v => { if (v) setVehiculos(JSON.parse(v)); });
     AsyncStorage.getItem('vehiculoActivo').then(v => { if (v) setVehiculoActivo(JSON.parse(v)); });
-    const gps = await AsyncStorage.getItem('debugGPS');
-    const accel = await AsyncStorage.getItem('debugAccel');
-    setDebugData({ ...(gps ? JSON.parse(gps) : {}), ...(accel ? JSON.parse(accel) : {}) });
+    try {
+      const gps = await AsyncStorage.getItem('debugGPS');
+      const accel = await AsyncStorage.getItem('debugAccel');
+      setDebugData({ ...(gps ? JSON.parse(gps) : {}), ...(accel ? JSON.parse(accel) : {}) });
+    } catch(e) {}
   };
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
@@ -125,7 +127,7 @@ export default function Perfil() {
 
       const json = JSON.stringify(backup, null, 2);
       const fecha = new Date().toISOString().split('T')[0];
-      const path = `${FileSystem.documentDirectory}betterDriver_backup_${fecha}.json`;
+      const path = `${FileSystem.cacheDirectory}betterDriver_backup_${fecha}.json`;
       await FileSystem.writeAsStringAsync(path, json);
 
       if (await Sharing.isAvailableAsync()) {
