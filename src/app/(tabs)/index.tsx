@@ -419,7 +419,22 @@ export default function Conducir() {
         </TouchableOpacity>
       );
     }
-    return null;
+    return (
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+        <TouchableOpacity
+          style={[styles.btnModoLibre]}
+          onPress={() => { setEsRoaming(true); setMostrarSelectorModo(true); }}
+        >
+          <Text style={styles.btnModoLibreTexto}>🎙 Modo libre</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.btnIniciar, { flex: 1 }]}
+          onPress={() => { setEsRoaming(false); setMostrarSelectorModo(true); }}
+        >
+          <Text style={styles.btnIniciarTexto}>🚗 Iniciar viaje</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
@@ -694,6 +709,8 @@ const styles = StyleSheet.create({
   debugTitulo: { color: '#2EE6C5', fontSize: 13, fontWeight: '600', marginBottom: 8 },
   debugLinea: { color: '#A4B2C5', fontSize: 12, marginBottom: 4 },
   debugValor: { color: '#F4F8FC', fontWeight: '600' },
+  btnModoLibre: { flex: 1, paddingVertical: 14, borderRadius: 32, borderWidth: 1, borderColor: C.marca, alignItems: 'center' },
+  btnModoLibreTexto: { color: C.marca, fontSize: 15, fontWeight: '500' },
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
   btnRoamingTexto: { color: C.gris, fontSize: 13 },
