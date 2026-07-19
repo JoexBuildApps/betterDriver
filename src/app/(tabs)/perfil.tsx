@@ -20,6 +20,7 @@ export default function Perfil() {
   const [vehiculoActivo, setVehiculoActivo] = useState<any>(null);
   const [editando, setEditando] = useState(false);
   const [editandoVehiculo, setEditandoVehiculo] = useState<number | null>(null);
+  const [debugData, setDebugData] = useState<any>({});
   const [marcaVEdit, setMarcaVEdit] = useState('');
   const [modeloVEdit, setModeloVEdit] = useState('');
   const [anioVEdit, setAnioVEdit] = useState('');
@@ -32,6 +33,9 @@ export default function Perfil() {
     AsyncStorage.getItem('perfil').then(p => { if (p) setPerfil(JSON.parse(p)); });
     AsyncStorage.getItem('vehiculos').then(v => { if (v) setVehiculos(JSON.parse(v)); });
     AsyncStorage.getItem('vehiculoActivo').then(v => { if (v) setVehiculoActivo(JSON.parse(v)); });
+    const gps = await AsyncStorage.getItem('debugGPS');
+    const accel = await AsyncStorage.getItem('debugAccel');
+    setDebugData({ ...(gps ? JSON.parse(gps) : {}), ...(accel ? JSON.parse(accel) : {}) });
   };
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
@@ -310,10 +314,13 @@ export default function Perfil() {
       {/* Debug GPS + Acelerometro */}
       <View style={[styles.seccion, { marginTop: 8 }]}>
         <Text style={styles.seccionTitulo}>Diagnóstico del dispositivo</Text>
-        <View style={{ gap: 6 }}>
-          <Text style={styles.debugLinea}>📡 GPS: <Text style={styles.debugValor}>activo</Text></Text>
-          <Text style={styles.debugLinea}>📳 Acelerómetro: <Text style={styles.debugValor}>ver en pantalla conducir</Text></Text>
-          <Text style={{ color: C.gris, fontSize: 11, marginTop: 4 }}>Activa el modo debug en la pantalla de conducción para ver los valores en tiempo real.</Text>
+        <Text style={{ color: C.gris, fontSize: 11, marginBottom: 10 }}>Valores actualizados mientras conduces.</Text>
+        <View style={{ gap: 8 }}>
+          <Text style={styles.debugLinea}>📡 GPS raw: <Text style={styles.debugValor}>{debugData.gpsRaw ?? '--'} km/h</Text></Text>
+          <Text style={styles.debugLinea}>📡 GPS prom: <Text style={styles.debugValor}>{debugData.gpsProm ?? '--'} km/h</Text></Text>
+          <Text style={styles.debugLinea}>📳 Accel magnitud: <Text style={styles.debugValor}>{debugData.accel ?? '--'}</Text> (1.0 = quieto)</Text>
+          <Text style={styles.debugLinea}>📳 Teléfono quieto: <Text style={[styles.debugValor, { color: debugData.quieto ? C.verde : C.rojo }]}>{debugData.quieto === undefined ? '--' : debugData.quieto ? 'SÍ' : 'NO'}</Text></Text>
+          <Text style={styles.debugLinea}>⏱ Segundos bajo vel: <Text style={styles.debugValor}>{debugData.segundosBajo ?? '--'}</Text></Text>
         </View>
       </View>
 

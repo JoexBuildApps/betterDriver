@@ -130,11 +130,13 @@ export default function Conducir() {
       const magnitud = Math.sqrt(x * x + y * y + z * z);
       accelMagnitud.current = magnitud;
       quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.12;
+      const quieto = Math.abs(magnitud - 1) < 0.12;
       setDebugInfo(prev => ({
         ...prev,
         accel: Math.round(magnitud * 100) / 100,
-        quieto: Math.abs(magnitud - 1) < 0.12,
+        quieto,
       }));
+      AsyncStorage.setItem('debugAccel', JSON.stringify({ accel: Math.round(magnitud * 100) / 100, quieto }));
     });
     return () => accelSub.remove();
   }, []);
@@ -280,15 +282,11 @@ export default function Conducir() {
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
           const kmhReal = Math.round(promRaw);
 
-          if (modoDebug) {
-            setDebugInfo({
-              gpsRaw: Math.round(rawKmh),
-              gpsProm: kmhReal,
-              accel: Math.round(accelMagnitud.current * 100) / 100,
-              quieto: quietoAcelerometro.current,
-              segundosBajo: segundosBajoVelocidad.current,
-            });
-          }
+          AsyncStorage.setItem('debugGPS', JSON.stringify({
+            gpsRaw: Math.round(rawKmh),
+            gpsProm: kmhReal,
+            segundosBajo: segundosBajoVelocidad.current,
+          }));
           const gpsLento = kmhReal < 8;
           const telefonoQuieto = quietoAcelerometro.current;
 
@@ -469,21 +467,7 @@ export default function Conducir() {
 
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
 
-          <TouchableOpacity style={styles.debugBtn} onPress={() => setModoDebug(!modoDebug)}>
-            <Text style={styles.debugBtnTexto}>{modoDebug ? '🔴 Debug ON' : '⚙️ Debug'}</Text>
-          </TouchableOpacity>
 
-          {modoDebug && (
-            <View style={styles.debugOverlay}>
-              <Text style={styles.debugTitulo}>📡 GPS + Acelerómetro</Text>
-              <Text style={styles.debugLinea}>GPS raw: <Text style={styles.debugValor}>{debugInfo.gpsRaw} km/h</Text></Text>
-              <Text style={styles.debugLinea}>GPS prom (5): <Text style={styles.debugValor}>{debugInfo.gpsProm} km/h</Text></Text>
-              <Text style={styles.debugLinea}>Accel magnitud: <Text style={styles.debugValor}>{debugInfo.accel}</Text> (1.0 = quieto)</Text>
-              <Text style={styles.debugLinea}>Teléfono quieto: <Text style={[styles.debugValor, { color: debugInfo.quieto ? '#30D158' : '#FF5C5C' }]}>{debugInfo.quieto ? 'SÍ' : 'NO'}</Text></Text>
-              <Text style={styles.debugLinea}>Segundos bajo vel: <Text style={styles.debugValor}>{debugInfo.segundosBajo}</Text></Text>
-              <Text style={styles.debugLinea}>Velocidad display: <Text style={styles.debugValor}>{velocidad} km/h</Text></Text>
-            </View>
-          )}
         </View>
       )}
 
