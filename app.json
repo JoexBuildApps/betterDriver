@@ -53,7 +53,9 @@
           }
         }
       ],
-      "expo-sensors"
+      "expo-sensors",
+      "expo-sharing",
+      "expo-document-picker"
     ],
     "experiments": {
       "typedRoutes": true,

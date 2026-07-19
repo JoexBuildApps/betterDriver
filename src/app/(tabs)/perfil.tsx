@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, TextInput, Linking } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, TextInput, Linking, Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -96,6 +99,87 @@ export default function Perfil() {
   const colorScore = promedioPuntos >= 10 ? C.verde : promedioPuntos >= 5 ? C.amarillo : C.rojo;
   const inicial = (perfil?.nombre || '?').charAt(0).toUpperCase();
 
+  const exportarDatos = async () => {
+    try {
+      const perfilData = await AsyncStorage.getItem('perfil');
+      const vehiculosData = await AsyncStorage.getItem('vehiculos');
+      const vehiculoActivoData = await AsyncStorage.getItem('vehiculoActivo');
+      const viajesData = await AsyncStorage.getItem('viajes');
+      const limiteData = await AsyncStorage.getItem('limiteUltimo');
+      const modoData = await AsyncStorage.getItem('ultimoModo');
+
+      const backup = {
+        version: '1.0',
+        fecha: new Date().toISOString(),
+        perfil: perfilData ? JSON.parse(perfilData) : null,
+        vehiculos: vehiculosData ? JSON.parse(vehiculosData) : [],
+        vehiculoActivo: vehiculoActivoData ? JSON.parse(vehiculoActivoData) : null,
+        viajes: viajesData ? JSON.parse(viajesData) : [],
+        limiteUltimo: limiteData || '50',
+        ultimoModo: modoData || 'viaje',
+      };
+
+      const json = JSON.stringify(backup, null, 2);
+      const fecha = new Date().toISOString().split('T')[0];
+      const path = `${FileSystem.documentDirectory}betterDriver_backup_${fecha}.json`;
+      await FileSystem.writeAsStringAsync(path, json);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(path, {
+          mimeType: 'application/json',
+          dialogTitle: 'Guardar backup de betterDriver',
+        });
+      } else {
+        Alert.alert('Exportado', `Backup guardado en: ${path}`);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo exportar los datos');
+    }
+  };
+
+  const importarDatos = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const json = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      const backup = JSON.parse(json);
+
+      if (!backup.version || !backup.perfil) {
+        Alert.alert('Error', 'El archivo no es un backup válido de betterDriver');
+        return;
+      }
+
+      Alert.alert(
+        'Importar datos',
+        `¿Restaurar backup del ${new Date(backup.fecha).toLocaleDateString('es-CO')}? Esto reemplazará todos tus datos actuales.`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Importar',
+            style: 'destructive',
+            onPress: async () => {
+              await AsyncStorage.setItem('perfil', JSON.stringify(backup.perfil));
+              await AsyncStorage.setItem('vehiculos', JSON.stringify(backup.vehiculos));
+              await AsyncStorage.setItem('vehiculoActivo', JSON.stringify(backup.vehiculoActivo));
+              await AsyncStorage.setItem('viajes', JSON.stringify(backup.viajes));
+              await AsyncStorage.setItem('limiteUltimo', backup.limiteUltimo);
+              await AsyncStorage.setItem('ultimoModo', backup.ultimoModo);
+              cargarDatos();
+              Alert.alert('Listo', 'Datos restaurados correctamente');
+            }
+          }
+        ]
+      );
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo leer el archivo');
+    }
+  };
+
   const contactar = async () => {
     const cuerpo = [
       `Nombre: ${perfil?.nombre || 'N/A'}`,
@@ -184,6 +268,19 @@ export default function Perfil() {
             <Text style={[styles.unidadBtnTexto, perfil?.unidad === 'mph' && styles.unidadBtnTextoActivo]}>mph</Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Datos */}
+      <View style={styles.seccion}>
+        <Text style={styles.seccionTitulo}>Mis datos</Text>
+        <TouchableOpacity style={styles.btnDatos} onPress={exportarDatos}>
+          <Text style={styles.btnDatosTexto}>📤 Exportar mis datos</Text>
+          <Text style={styles.btnDatosDesc}>Guarda un backup de viajes, vehículos y perfil</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.btnDatos, { marginTop: 8 }]} onPress={importarDatos}>
+          <Text style={styles.btnDatosTexto}>📥 Importar datos</Text>
+          <Text style={styles.btnDatosDesc}>Restaura desde un backup anterior</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Acerca de */}
@@ -288,6 +385,9 @@ const styles = StyleSheet.create({
   unidadBtnTexto: { color: C.gris, fontSize: 16, fontWeight: '500' },
   unidadBtnTextoActivo: { color: C.marca },
   acercaTexto: { color: C.gris, fontSize: 14, lineHeight: 22, marginBottom: 12 },
+  btnDatos: { borderWidth: 1, borderColor: C.divider, borderRadius: 12, padding: 14 },
+  btnDatosTexto: { color: C.blanco, fontSize: 14, fontWeight: '500', marginBottom: 2 },
+  btnDatosDesc: { color: C.gris, fontSize: 12 },
   btnContacto: { borderWidth: 1, borderColor: C.divider, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8, marginBottom: 12 },
   btnContactoTexto: { color: C.gris, fontSize: 14 },
   version: { color: C.divider, fontSize: 12, textAlign: 'center' },

@@ -178,6 +178,7 @@ export default function Conducir() {
     setModoManual(false);
     setLimiteManual('');
     AsyncStorage.setItem('limiteUltimo', String(l));
+    setMostrarSelectorModo(false);
     AsyncStorage.setItem('ultimoModo', 'viaje');
     if (esRoaming) {
       iniciarRoaming(l);
@@ -210,7 +211,7 @@ export default function Conducir() {
     setModoRoaming(false);
     setVelocidad(0);
     velocidadDisplay.current = 0;
-    setMostrarSelectorModo(true);
+    setTimeout(() => setMostrarSelectorModo(true), 300);
   };
 
   const confirmarManual = () => {
@@ -261,7 +262,7 @@ export default function Conducir() {
     });
     setViajeActivo(false);
     setTopSpeed(0);
-    setMostrarSelectorModo(true);
+    setTimeout(() => setMostrarSelectorModo(true), 300);
   };
 
   useEffect(() => {
@@ -484,7 +485,7 @@ export default function Conducir() {
         </View>
       )}
 
-      <Modal visible={mostrarSelectorModo && !viajeActivo && !modoRoaming} transparent animationType="fade">
+      <Modal visible={mostrarSelectorModo} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
