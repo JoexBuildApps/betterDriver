@@ -1,0 +1,15 @@
+export const C = {
+  fondo: '#07111F',
+  superficie: '#121F37',
+  superficie2: '#1A2945',
+  marca: '#2EE6C5',
+  secondary: '#64D2FF',
+  verde: '#30D158',
+  amarillo: '#FFC83D',
+  rojo: '#FF5C5C',
+  blanco: '#F4F8FC',
+  gris: '#A4B2C5',
+  divider: '#223452',
+  glass: 'rgba(18, 31, 55, 0.85)',
+  borde: 'rgba(255,255,255,0.06)',
+};

@@ -1,25 +1,13 @@
-import { CONFIG } from '../../utils/config';
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Modal, TextInput, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
-import { Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
-import { useCallback } from 'react';
 import { getViajes, Viaje } from '../../utils/viajes';
 import { calcularScore, calcularEstrellas } from '../../utils/puntos';
-
-const C = {
-  fondo: '#0a1628',
-  marca: '#4fc3f7',
-  blanco: '#ffffff',
-  gris: '#607d8b',
-  superficie: '#0f1f3a',
-  verde: '#30d158',
-  amarillo: '#ffd60a',
-  rojo: '#ff3b30',
-};
+import { CONFIG } from '../../utils/config';
+import { C } from '../../utils/colors';
 
 export default function Perfil() {
   const insets = useSafeAreaInsets();
@@ -40,12 +28,7 @@ export default function Perfil() {
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
 
-  const abrirEditor = () => {
-    setNombreEdit(perfil?.nombre || '');
-    setCiudadEdit(perfil?.ciudad || '');
-    setEditando(true);
-  };
-
+  const abrirEditor = () => { setNombreEdit(perfil?.nombre || ''); setCiudadEdit(perfil?.ciudad || ''); setEditando(true); };
   const guardarEdicion = async () => {
     const nuevo = { ...perfil, nombre: nombreEdit.trim(), ciudad: ciudadEdit.trim() };
     await AsyncStorage.setItem('perfil', JSON.stringify(nuevo));
@@ -78,96 +61,60 @@ export default function Perfil() {
     setVehiculos(nuevos);
   };
 
+  // Stats
   const totalViajes = viajes.length;
-  const promedioPuntos = totalViajes > 0
-    ? Math.round(viajes.reduce((a, v) => a + v.puntosFinales, 0) / totalViajes)
-    : 0;
-  const topSpeedHistorico = totalViajes > 0
-    ? Math.max(...viajes.map(v => v.topSpeed))
-    : 0;
-  const totalInfracciones = viajes.reduce((a, v) => a + v.eventos.length, 0);
-
-  const infraccionMasFrecuente = () => {
-    const conteo = { exceso: 0, frenada: 0, aceleracion: 0 };
-    viajes.forEach(v => v.eventos.forEach(e => { conteo[e.tipo]++ }));
-    const max = Math.max(...Object.values(conteo));
-    if (max === 0) return 'Ninguna';
-    if (conteo.exceso === max) return 'Exceso de velocidad';
-    if (conteo.frenada === max) return 'Frenadas bruscas';
-    return 'Aceleraciones bruscas';
-  };
-
-  const rachaSinInfracciones = () => {
-    let racha = 0;
-    for (const v of viajes) {
-      if (v.eventos.length === 0) racha++;
-      else break;
-    }
-    return racha;
-  };
-
+  const promedioPuntos = totalViajes > 0 ? Math.round(viajes.reduce((a, v) => a + v.puntosFinales, 0) / totalViajes) : 0;
   const estrellasGeneral = calcularEstrellas(promedioPuntos, 60);
   const scoreGeneral = calcularScore(estrellasGeneral);
+  const colorScore = promedioPuntos >= 10 ? C.verde : promedioPuntos >= 5 ? C.amarillo : C.rojo;
+  const inicial = (perfil?.nombre || '?').charAt(0).toUpperCase();
 
-  const colorScore = () => {
-    if (promedioPuntos >= 900) return C.verde;
-    if (promedioPuntos >= 700) return C.amarillo;
-    return C.rojo;
+  const contactar = async () => {
+    const cuerpo = [
+      `Nombre: ${perfil?.nombre || 'N/A'}`,
+      `Ciudad: ${perfil?.ciudad || 'N/A'}`,
+      `Dispositivo: ${Device.modelName || 'N/A'}`,
+      `Android: ${Device.osVersion || 'N/A'}`,
+      `App version: ${CONFIG.version}`,
+      '---',
+      'Escribe tu mensaje aquí:',
+    ].join('%0A');
+    Linking.openURL(`mailto:${CONFIG.email}?subject=betterDriver%20-%20Soporte&body=${cuerpo}`);
   };
 
   return (
-    <ScrollView style={[styles.container, { paddingLeft: insets.left, paddingRight: insets.right }]} contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+    >
+      {/* Header con avatar */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarTexto}>{perfil?.nombre?.charAt(0).toUpperCase() || '?'}</Text>
+        <View style={[styles.avatar, { backgroundColor: colorScore === C.verde ? 'rgba(48,209,88,0.2)' : 'rgba(46,230,197,0.2)' }]}>
+          <Text style={[styles.avatarTexto, { color: C.marca }]}>{inicial}</Text>
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={styles.nombre}>{perfil?.nombre || 'Conductor'}</Text>
             <TouchableOpacity onPress={abrirEditor}>
-              <Text style={{ color: C.marca, fontSize: 13 }}>Editar</Text>
+              <Text style={styles.editarBtn}>Editar</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.ciudad}>{perfil?.ciudad || ''}</Text>
-          {totalViajes > 0 && <Text style={[styles.scoreGeneral, { color: colorScore() }]}>{scoreGeneral}</Text>}
+          {totalViajes > 0 && (
+            <Text style={[styles.scoreGeneral, { color: colorScore }]}>{scoreGeneral}</Text>
+          )}
         </View>
       </View>
 
-      {totalViajes > 0 && (
-        <View style={styles.grid}>
-          <View style={styles.card}>
-            <Text style={styles.cardValor}>{totalViajes}</Text>
-            <Text style={styles.cardLabel}>viajes</Text>
-          </View>
-          <View style={styles.card}>
-            <Text style={[styles.cardValor, { color: colorScore() }]}>{promedioPuntos}</Text>
-            <Text style={styles.cardLabel}>pts promedio</Text>
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.cardValor}>{topSpeedHistorico}</Text>
-            <Text style={styles.cardLabel}>top speed km/h</Text>
-          </View>
+      {/* Vehiculo activo */}
+      {vehiculoActivo && (
+        <View style={styles.vehiculoActivoCard}>
+          <Text style={styles.vehiculoActivoLabel}>Vehículo activo</Text>
+          <Text style={styles.vehiculoActivoNombre}>{vehiculoActivo.marca} {vehiculoActivo.modelo} {vehiculoActivo.anio}</Text>
         </View>
       )}
 
-      {totalViajes > 0 && (
-        <View style={styles.seccion}>
-          <Text style={styles.seccionTitulo}>Detalles</Text>
-          <View style={styles.fila}>
-            <Text style={styles.filaLabel}>Infracciones totales</Text>
-            <Text style={styles.filaValor}>{totalInfracciones}</Text>
-          </View>
-          <View style={styles.fila}>
-            <Text style={styles.filaLabel}>Infracción más frecuente</Text>
-            <Text style={styles.filaValor}>{infraccionMasFrecuente()}</Text>
-          </View>
-          <View style={styles.fila}>
-            <Text style={styles.filaLabel}>Viajes sin infracciones seguidos</Text>
-            <Text style={styles.filaValor}>{rachaSinInfracciones()}</Text>
-          </View>
-        </View>
-      )}
-
+      {/* Mis vehiculos */}
       <View style={styles.seccion}>
         <Text style={styles.seccionTitulo}>Mis vehículos</Text>
         {vehiculos.map((v, i) => (
@@ -184,8 +131,15 @@ export default function Perfil() {
             </TouchableOpacity>
           </View>
         ))}
-        <View style={styles.unidadContainer}>
-        <Text style={styles.seccionTitulo}>Unidad de velocidad</Text>
+        <TouchableOpacity style={styles.btnAgregar} onPress={() => router.push('/agregar_vehiculo')}>
+          <Text style={styles.btnAgregarTexto}>+ Agregar vehículo</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Preferencias */}
+      <View style={styles.seccion}>
+        <Text style={styles.seccionTitulo}>Preferencias</Text>
+        <Text style={styles.prefLabel}>Unidad de velocidad</Text>
         <View style={styles.unidadBtns}>
           <TouchableOpacity
             style={[styles.unidadBtn, (perfil?.unidad || 'kmh') === 'kmh' && styles.unidadBtnActivo]}
@@ -202,47 +156,36 @@ export default function Perfil() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.btnAgregar} onPress={() => router.push('/agregar_vehiculo')}>
-          <Text style={styles.btnAgregarTexto}>+ Agregar vehículo</Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity
-        style={styles.btnContacto}
-        onPress={async () => {
-          const cuerpo = [
-            `Nombre: ${perfil?.nombre || 'N/A'}`,
-            `Ciudad: ${perfil?.ciudad || 'N/A'}`,
-            `Dispositivo: ${Device.modelName || 'N/A'}`,
-            `Android: ${Device.osVersion || 'N/A'}`,
-            `App version: ${CONFIG.version}`,
-            '---',
-            'Escribe tu mensaje aquí:',
-          ].join('%0A');
-          const url = 'mailto:' + CONFIG.email + '?subject=betterDriver%20-%20Soporte&body=' + cuerpo;
-          Linking.openURL(url);
-        }}
-      >
-        <Text style={styles.btnContactoTexto}>📧 Contacto y soporte</Text>
-      </TouchableOpacity>
+      {/* Acerca de */}
+      <View style={styles.seccion}>
+        <Text style={styles.seccionTitulo}>Acerca de betterDriver</Text>
+        <Text style={styles.acercaTexto}>
+          betterDriver nació para hacerte consciente de tu velocidad. No para juzgarte — para recordarte que la calle es de todos.
+        </Text>
+        <Text style={styles.acercaTexto}>
+          Hecha en Colombia 🇨🇴 con ganas de mejorar la forma en que manejamos. Seguiremos actualizando y mejorando con el tiempo.
+        </Text>
+        <Text style={styles.acercaTexto}>
+          ¿Tienes ideas para mejorar la app? Escríbenos — nos encanta escuchar.
+        </Text>
+        <Text style={styles.acercaTexto}>
+          Si betterDriver te hizo manejar un poco más despacio, ya cumplió su propósito. El botón ☕ en Mis viajes está ahí si quieres apoyar el proyecto.
+        </Text>
 
+        <TouchableOpacity style={styles.btnContacto} onPress={contactar}>
+          <Text style={styles.btnContactoTexto}>📧 Contacto y soporte</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.version}>Versión {CONFIG.version} · {CONFIG.marca}</Text>
+      </View>
+
+      {/* Modal editar */}
       <Modal visible={editando} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitulo}>Editar perfil</Text>
-            <TextInput
-              style={styles.input}
-              value={nombreEdit}
-              onChangeText={setNombreEdit}
-              placeholder="Nombre"
-              placeholderTextColor={C.gris}
-            />
-            <TextInput
-              style={styles.input}
-              value={ciudadEdit}
-              onChangeText={setCiudadEdit}
-              placeholder="Ciudad"
-              placeholderTextColor={C.gris}
-            />
+            <TextInput style={styles.input} value={nombreEdit} onChangeText={setNombreEdit} placeholder="Nombre" placeholderTextColor={C.gris} />
+            <TextInput style={styles.input} value={ciudadEdit} onChangeText={setCiudadEdit} placeholder="Ciudad" placeholderTextColor={C.gris} />
             <TouchableOpacity style={styles.btnGuardar} onPress={guardarEdicion}>
               <Text style={styles.btnGuardarTexto}>Guardar</Text>
             </TouchableOpacity>
@@ -252,51 +195,49 @@ export default function Perfil() {
           </View>
         </View>
       </Modal>
-
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.fondo, padding: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 50, marginBottom: 24 },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.superficie, alignItems: 'center', justifyContent: 'center' },
-  avatarTexto: { color: C.marca, fontSize: 24, fontWeight: 'bold' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 50, marginBottom: 20 },
+  avatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+  avatarTexto: { fontSize: 28, fontWeight: 'bold' },
   nombre: { color: C.blanco, fontSize: 20, fontWeight: '500' },
+  editarBtn: { color: C.marca, fontSize: 13 },
   ciudad: { color: C.gris, fontSize: 13, marginTop: 2 },
   scoreGeneral: { fontSize: 13, fontWeight: '500', marginTop: 4 },
-  grid: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  card: { flex: 1, backgroundColor: C.superficie, borderRadius: 12, padding: 16, alignItems: 'center' },
-  cardValor: { color: C.blanco, fontSize: 24, fontWeight: 'bold' },
-  cardLabel: { color: C.gris, fontSize: 11, marginTop: 4, textAlign: 'center' },
-  seccion: { backgroundColor: C.superficie, borderRadius: 12, padding: 16, marginBottom: 24 },
+  vehiculoActivoCard: { backgroundColor: 'rgba(46,230,197,0.08)', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(46,230,197,0.2)' },
+  vehiculoActivoLabel: { color: C.marca, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+  vehiculoActivoNombre: { color: C.blanco, fontSize: 16, fontWeight: '500' },
+  seccion: { backgroundColor: C.superficie, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: C.borde },
   seccionTitulo: { color: C.gris, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
-  fila: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: '#1a3050' },
-  filaLabel: { color: C.gris, fontSize: 14 },
-  filaValor: { color: C.blanco, fontSize: 14, fontWeight: '500' },
-  vehiculoFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: '#1a3050' },
+  vehiculoFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 0.5, borderBottomColor: C.divider },
   vehiculoInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  vehiculoActivo: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.superficie, borderWidth: 1, borderColor: C.gris },
+  vehiculoActivo: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.superficie2, borderWidth: 1, borderColor: C.gris },
   vehiculoActivoOn: { backgroundColor: C.marca, borderColor: C.marca },
   vehiculoNombre: { color: C.blanco, fontSize: 15 },
   vehiculoAnio: { color: C.gris, fontSize: 13, marginTop: 2 },
   eliminar: { color: C.rojo, fontSize: 16, padding: 8 },
   btnAgregar: { borderWidth: 1, borderColor: C.marca, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
   btnAgregarTexto: { color: C.marca, fontSize: 15 },
-  unidadContainer: { backgroundColor: C.superficie, borderRadius: 12, padding: 16, marginBottom: 16 },
-  unidadBtns: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  unidadBtn: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1a3050', alignItems: 'center' },
-  unidadBtnActivo: { borderColor: C.marca, backgroundColor: 'rgba(79,195,247,0.15)' },
+  prefLabel: { color: C.gris, fontSize: 14, marginBottom: 10 },
+  unidadBtns: { flexDirection: 'row', gap: 12 },
+  unidadBtn: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: C.divider, alignItems: 'center' },
+  unidadBtnActivo: { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.15)' },
   unidadBtnTexto: { color: C.gris, fontSize: 16, fontWeight: '500' },
   unidadBtnTextoActivo: { color: C.marca },
+  acercaTexto: { color: C.gris, fontSize: 14, lineHeight: 22, marginBottom: 12 },
+  btnContacto: { borderWidth: 1, borderColor: C.divider, borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8, marginBottom: 12 },
+  btnContactoTexto: { color: C.gris, fontSize: 14 },
+  version: { color: C.divider, fontSize: 12, textAlign: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
   modalBox: { backgroundColor: C.superficie, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca, gap: 12 },
-  modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  input: { backgroundColor: '#1a3050', color: C.blanco, fontSize: 16, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#1a3050' },
+  modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600' },
+  input: { backgroundColor: C.superficie2, color: C.blanco, fontSize: 16, padding: 14, borderRadius: 12 },
   btnGuardar: { backgroundColor: C.marca, padding: 14, borderRadius: 12, alignItems: 'center' },
   btnGuardarTexto: { color: C.fondo, fontSize: 15, fontWeight: 'bold' },
-  btnCancelar: { alignItems: 'center', padding: 10 },
+  btnCancelar: { alignItems: 'center', padding: 8 },
   btnCancelarTexto: { color: C.gris, fontSize: 14 },
-  btnContacto: { borderWidth: 1, borderColor: C.gris, borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 40 },
-  btnContactoTexto: { color: C.gris, fontSize: 14 },
 });
