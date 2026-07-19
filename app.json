@@ -28,9 +28,6 @@
         "WAKE_LOCK",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.ACCESS_FINE_LOCATION"
-      ],
-      "abiFilters": [
-        "arm64-v8a"
       ]
     },
     "web": {
