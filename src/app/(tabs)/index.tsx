@@ -77,6 +77,7 @@ export default function Conducir() {
   const [limiteManual, setLimiteManual] = useState('');
   const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
   const [modoRoaming, setModoRoaming] = useState(false);
+  const [mostrarSelectorModo, setMostrarSelectorModo] = useState(false);
   const origenRef = useRef<string | undefined>(undefined);
 
   const segundosBien = useRef(0);
@@ -113,16 +114,9 @@ export default function Conducir() {
     AsyncStorage.getItem('vehiculos').then(v => { if (v) setVehiculos(JSON.parse(v)); });
     AsyncStorage.getItem('vehiculoActivo').then(v => { if (v) setVehiculoSeleccionado(JSON.parse(v)); });
 
-    let c = 5;
-    setCountdown(5);
-    const timerAuto = setInterval(() => {
-      c--;
-      setCountdown(c);
-      if (c <= 0) { clearInterval(timerAuto); iniciarModalLimite(); }
-    }, 1000);
+    setMostrarSelectorModo(true);
     return () => {
       try { deactivateKeepAwake(); } catch (e) {}
-      clearInterval(timerAuto);
     };
   }, []);
 
@@ -168,12 +162,18 @@ export default function Conducir() {
     }, 1000);
   };
 
+  const [esRoaming, setEsRoaming] = useState(false);
+
   const confirmarLimite = (l: number) => {
     clearInterval(timerCountdown.current);
     setLimite(l);
     setModoManual(false);
     setLimiteManual('');
     AsyncStorage.setItem('limiteUltimo', String(l));
+    if (esRoaming) {
+      iniciarRoaming(l);
+      return;
+    }
     if (vehiculoSeleccionado) AsyncStorage.setItem('vehiculoActivo', JSON.stringify(vehiculoSeleccionado));
     setMostrarLimite(false);
     resetearViaje();
@@ -187,6 +187,18 @@ export default function Conducir() {
         }
       }).catch(() => {});
     }).catch(() => {});
+  };
+
+  const iniciarRoaming = (l: number) => {
+    setLimite(l);
+    setModoRoaming(true);
+    setMostrarSelectorModo(false);
+    setMostrarLimite(false);
+  };
+
+  const detenerRoaming = () => {
+    setModoRoaming(false);
+    setMostrarSelectorModo(true);
   };
 
   const confirmarManual = () => {
@@ -425,19 +437,45 @@ export default function Conducir() {
             </View>
           )}
           <BotonesViaje />
-          {!viajeActivo && (
-            <TouchableOpacity
-              style={[styles.btnRoaming, modoRoaming && styles.btnRoamingActivo]}
-              onPress={() => setModoRoaming(!modoRoaming)}
-            >
-              <Text style={[styles.btnRoamingTexto, modoRoaming && { color: C.marca }]}>
-                {modoRoaming ? '🎙 Modo libre activo' : 'Modo libre (sin registrar)'}
-              </Text>
+          {modoRoaming && (
+            <TouchableOpacity style={styles.btnRoaming} onPress={detenerRoaming}>
+              <Text style={styles.btnRoamingTexto}>🎙 Modo libre activo · Detener</Text>
             </TouchableOpacity>
           )}
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
         </View>
       )}
+
+      {/* Modal selector de modo */}
+      <Modal visible={mostrarSelectorModo && !viajeActivo && !modoRoaming} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
+
+            <TouchableOpacity
+              style={styles.modoBtn}
+              onPress={() => { setEsRoaming(true); setMostrarSelectorModo(false); setMostrarLimite(true); clearInterval(timerCountdown.current); setCountdown(5); }}
+            >
+              <Text style={styles.modoBtnIcon}>🎙</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modoBtnTitulo}>Modo libre</Text>
+                <Text style={styles.modoBtnSub}>La abuela te acompaña, sin registros</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modoBtn, { borderColor: C.verde }]}
+              onPress={() => { setEsRoaming(false); setMostrarSelectorModo(false); iniciarModalLimite(); }}
+            >
+              <Text style={styles.modoBtnIcon}>🚗</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.modoBtnTitulo, { color: C.verde }]}>Iniciar viaje</Text>
+                <Text style={styles.modoBtnSub}>Registra tu conducción y guarda el historial</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={mostrarLimite} transparent animationType="fade">
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -548,6 +586,10 @@ const styles = StyleSheet.create({
   btnTerminar: { marginTop: 20, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 32 },
   btnTerminarTexto: { color: C.rojo, fontSize: 16 },
   perfilTexto: { marginTop: 12, color: C.gris, fontSize: 12 },
+  modoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.marca, marginBottom: 12 },
+  modoBtnIcon: { fontSize: 28 },
+  modoBtnTitulo: { color: C.marca, fontSize: 16, fontWeight: '600' },
+  modoBtnSub: { color: C.gris, fontSize: 12, marginTop: 2 },
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
   btnRoamingTexto: { color: C.gris, fontSize: 13 },

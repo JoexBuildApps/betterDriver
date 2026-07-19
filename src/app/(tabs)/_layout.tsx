@@ -3,16 +3,16 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
-    <Tabs screenListeners={{}} 
+    <Tabs
       screenOptions={{
         tabBarStyle: { backgroundColor: '#07111F', borderTopColor: '#223452' },
-        animation: 'fade',
-        tabBarActiveTintColor: '#30d158',
-        tabBarInactiveTintColor: '#555',
+        tabBarActiveTintColor: '#2EE6C5',
+        tabBarInactiveTintColor: '#607d8b',
         headerShown: false,
+        animation: 'fade',
       }}
     >
-      <Tabs screenListeners={{}} .Screen
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Conducir',
@@ -21,7 +21,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs screenListeners={{}} .Screen
+      <Tabs.Screen
         name="viajes"
         options={{
           title: 'Mis viajes',
@@ -30,7 +30,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs screenListeners={{}} .Screen
+      <Tabs.Screen
         name="perfil"
         options={{
           title: 'Mi perfil',
