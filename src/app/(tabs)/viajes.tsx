@@ -131,6 +131,19 @@ export default function Viajes() {
           renderItem={({ item }) => (
             <View style={[styles.card, isLandscape && { flex: 1 }]}>
               {/* Header */}
+              {/* Ruta origen → destino */}
+              {(item.origenBarrio || item.destinoBarrio) && (
+                <View style={styles.rutaRow}>
+                  <View style={[styles.rutaDot, { backgroundColor: C.marca }]} />
+                  <Text style={styles.rutaTxt}>{item.origenBarrio || '?'}</Text>
+                  <View style={styles.rutaLinea} />
+                  <Text style={styles.rutaKm}>{item.distanciaKm || 0} km</Text>
+                  <View style={styles.rutaLinea} />
+                  <View style={[styles.rutaDot, { backgroundColor: C.amarillo }]} />
+                  <Text style={styles.rutaTxt}>{item.destinoBarrio || '?'}</Text>
+                </View>
+              )}
+
               <View style={styles.cardHeader}>
                 <Text style={styles.fecha}>{formatearFecha(item.fecha)}</Text>
                 <ScoreFlash score={item.score} color={colorScore[item.score] || C.gris} estrellas={item.estrellas || 3} />
@@ -151,11 +164,7 @@ export default function Viajes() {
                   <Text style={styles.statValor}>{item.topSpeed}</Text>
                   <Text style={styles.statLabel}>top km/h</Text>
                 </View>
-                <View style={styles.stat}>
-                  <Text style={styles.statIcon}>📍</Text>
-                  <Text style={styles.statValor}>{item.distanciaKm || 0}</Text>
-                  <Text style={styles.statLabel}>km</Text>
-                </View>
+
                 <View style={styles.stat}>
                   <Text style={styles.statIcon}>⏱</Text>
                   <Text style={styles.statValor}>{formatearDuracion(item.duracion)}</Text>
@@ -203,7 +212,7 @@ export default function Viajes() {
 
               {/* Vehiculo con editar */}
               <View style={styles.detalle}>
-                <Text style={styles.detalleLabel}>🚗 Vehículo</Text>
+                <Text style={styles.detalleLabel}>{item.tipoVehiculo?.split(' ')[0] || '🚗'} Vehículo</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={styles.detalleValor}>{item.vehiculo || 'No registrado'}</Text>
                   {vehiculos.length > 1 && (
@@ -410,6 +419,11 @@ const styles = StyleSheet.create({
   cafeStripArrow: { color: C.marca, fontSize: 16 },
   btnBorrar: { marginTop: 10, borderWidth: 1, borderColor: 'rgba(255,59,48,0.4)', borderRadius: 8, padding: 8, alignItems: 'center' },
   btnBorrarTexto: { color: C.rojo, fontSize: 13 },
+  rutaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+  rutaDot: { width: 8, height: 8, borderRadius: 4 },
+  rutaTxt: { color: C.blanco, fontSize: 12, fontWeight: '500' },
+  rutaLinea: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.15)' },
+  rutaKm: { color: C.gris, fontSize: 11 },
   historialCard: { backgroundColor: C.glass, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: C.borde },
   historialTitulo: { color: C.blanco, fontSize: 15, fontWeight: '600', marginBottom: 12 },
   historialGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },

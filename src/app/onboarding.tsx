@@ -18,6 +18,7 @@ export default function Onboarding() {
   const [marca, setMarca] = useState('');
   const [modelo, setModelo] = useState('');
   const [anio, setAnio] = useState('');
+  const [tipo, setTipo] = useState('🚗 Automóvil');
   const [ciudad, setCiudad] = useState('');
   const [paso, setPaso] = useState(1);
   const [detectandoCiudad, setDetectandoCiudad] = useState(false);
@@ -50,7 +51,7 @@ export default function Onboarding() {
   const finalizar = async () => {
     const perfilData = { nombre, ciudad };
     await AsyncStorage.setItem('perfil', JSON.stringify(perfilData));
-    const vehiculo = { marca, modelo, anio };
+    const vehiculo = { marca, modelo, anio, tipo };
     await AsyncStorage.setItem('vehiculos', JSON.stringify([vehiculo]));
     await AsyncStorage.setItem('vehiculoActivo', JSON.stringify(vehiculo));
     router.replace('/(tabs)');
@@ -123,6 +124,18 @@ export default function Onboarding() {
               keyboardType="numeric"
               maxLength={4}
             />
+            <View style={styles.tipoContainer}>
+              {['🚗 Automóvil', '🚙 SUV', '🏍 Moto', '🚐 Van', '🚛 Camión'].map(t => (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.tipoBtn, tipo === t && styles.tipoBtnActivo]}
+                  onPress={() => setTipo(t)}
+                >
+                  <Text style={[styles.tipoBtnTexto, tipo === t && styles.tipoBtnTextoActivo]}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <TouchableOpacity
               style={[styles.btn, (!marca.trim() || !modelo.trim() || !anio.trim()) && styles.btnDesactivado]}
               onPress={siguiente}

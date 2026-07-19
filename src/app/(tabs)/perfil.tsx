@@ -16,6 +16,11 @@ export default function Perfil() {
   const [vehiculos, setVehiculos] = useState<any[]>([]);
   const [vehiculoActivo, setVehiculoActivo] = useState<any>(null);
   const [editando, setEditando] = useState(false);
+  const [editandoVehiculo, setEditandoVehiculo] = useState<number | null>(null);
+  const [marcaVEdit, setMarcaVEdit] = useState('');
+  const [modeloVEdit, setModeloVEdit] = useState('');
+  const [anioVEdit, setAnioVEdit] = useState('');
+  const [tipoVEdit, setTipoVEdit] = useState('🚗 Automóvil');
   const [nombreEdit, setNombreEdit] = useState('');
   const [ciudadEdit, setCiudadEdit] = useState('');
 
@@ -44,6 +49,28 @@ export default function Perfil() {
       await AsyncStorage.setItem('perfil', JSON.stringify(parsed));
       setPerfil(parsed);
     }
+  };
+
+  const abrirEditorVehiculo = (idx: number) => {
+    const v = vehiculos[idx];
+    setMarcaVEdit(v.marca);
+    setModeloVEdit(v.modelo);
+    setAnioVEdit(v.anio);
+    setTipoVEdit(v.tipo || '🚗 Automóvil');
+    setEditandoVehiculo(idx);
+  };
+
+  const guardarVehiculo = async () => {
+    const nuevos = vehiculos.map((v, i) =>
+      i === editandoVehiculo ? { ...v, marca: marcaVEdit, modelo: modeloVEdit, anio: anioVEdit, tipo: tipoVEdit } : v
+    );
+    await AsyncStorage.setItem('vehiculos', JSON.stringify(nuevos));
+    if (vehiculoActivo && vehiculos[editandoVehiculo!]?.marca === vehiculoActivo.marca) {
+      await AsyncStorage.setItem('vehiculoActivo', JSON.stringify(nuevos[editandoVehiculo!]));
+      setVehiculoActivo(nuevos[editandoVehiculo!]);
+    }
+    setVehiculos(nuevos);
+    setEditandoVehiculo(null);
   };
 
   const seleccionarVehiculo = async (v: any) => {
@@ -126,6 +153,9 @@ export default function Perfil() {
                 <Text style={styles.vehiculoAnio}>{v.anio}</Text>
               </View>
             </TouchableOpacity>
+            <TouchableOpacity style={{ marginRight: 8 }} onPress={() => abrirEditorVehiculo(i)}>
+              <Text style={{ color: C.marca, fontSize: 13 }}>Editar</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => eliminarVehiculo(i)}>
               <Text style={styles.eliminar}>✕</Text>
             </TouchableOpacity>
@@ -163,7 +193,7 @@ export default function Perfil() {
           betterDriver nació para hacerte consciente de tu velocidad. No para juzgarte — para recordarte que la calle es de todos.
         </Text>
         <Text style={styles.acercaTexto}>
-          Hecha en Colombia 🇨🇴 con ganas de mejorar la forma en que manejamos. Seguiremos actualizando y mejorando con el tiempo.
+          Hecha en Colombia 🇨🇴 para el mundo. Creemos que manejar mejor es un hábito que se puede construir, sin importar en qué ciudad del planeta estés. Seguiremos mejorando con el tiempo.
         </Text>
         <Text style={styles.acercaTexto}>
           ¿Tienes ideas para mejorar la app? Escríbenos — nos encanta escuchar.
@@ -178,6 +208,35 @@ export default function Perfil() {
 
         <Text style={styles.version}>Versión {CONFIG.version} · {CONFIG.marca}</Text>
       </View>
+
+      {/* Modal editar vehiculo */}
+      <Modal visible={editandoVehiculo !== null} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitulo}>Editar vehículo</Text>
+            <TextInput style={styles.input} value={marcaVEdit} onChangeText={setMarcaVEdit} placeholder="Marca" placeholderTextColor={C.gris} />
+            <TextInput style={styles.input} value={modeloVEdit} onChangeText={setModeloVEdit} placeholder="Modelo" placeholderTextColor={C.gris} />
+            <TextInput style={styles.input} value={anioVEdit} onChangeText={setAnioVEdit} placeholder="Año" placeholderTextColor={C.gris} keyboardType="numeric" maxLength={4} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+              {['🚗 Automóvil', '🚙 SUV', '🏍 Moto', '🚐 Van', '🚛 Camión'].map(t => (
+                <TouchableOpacity
+                  key={t}
+                  style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: tipoVEdit === t ? C.marca : C.divider, backgroundColor: tipoVEdit === t ? 'rgba(46,230,197,0.15)' : 'transparent' }}
+                  onPress={() => setTipoVEdit(t)}
+                >
+                  <Text style={{ color: tipoVEdit === t ? C.marca : C.gris, fontSize: 12 }}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.btnGuardar} onPress={guardarVehiculo}>
+              <Text style={styles.btnGuardarTexto}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnCancelar} onPress={() => setEditandoVehiculo(null)}>
+              <Text style={styles.btnCancelarTexto}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Modal editar */}
       <Modal visible={editando} transparent animationType="fade">

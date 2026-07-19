@@ -15,9 +15,10 @@ export default function AgregarVehiculo() {
   const [marca, setMarca] = useState('');
   const [modelo, setModelo] = useState('');
   const [anio, setAnio] = useState('');
+  const [tipo, setTipo] = useState('🚗 Automóvil');
 
   const guardar = async () => {
-    const nuevo = { marca, modelo, anio };
+    const nuevo = { marca, modelo, anio, tipo };
     const existing = await AsyncStorage.getItem('vehiculos');
     const vehiculos = existing ? JSON.parse(existing) : [];
     vehiculos.push(nuevo);
@@ -57,7 +58,19 @@ export default function AgregarVehiculo() {
           maxLength={4}
         />
 
-        <TouchableOpacity
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+        {['🚗 Automóvil', '🚙 SUV', '🏍 Moto', '🚐 Van', '🚛 Camión'].map(t => (
+          <TouchableOpacity
+            key={t}
+            style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: tipo === t ? '#2EE6C5' : '#1a3050', backgroundColor: tipo === t ? 'rgba(46,230,197,0.15)' : 'transparent' }}
+            onPress={() => setTipo(t)}
+          >
+            <Text style={{ color: tipo === t ? '#2EE6C5' : '#607d8b', fontSize: 13 }}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <TouchableOpacity
           style={[styles.btn, (!marca.trim() || !modelo.trim() || !anio.trim()) && styles.btnDesactivado]}
           onPress={guardar}
           disabled={!marca.trim() || !modelo.trim() || !anio.trim()}

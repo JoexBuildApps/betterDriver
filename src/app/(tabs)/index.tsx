@@ -76,6 +76,8 @@ export default function Conducir() {
   const [modoManual, setModoManual] = useState(false);
   const [limiteManual, setLimiteManual] = useState('');
   const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
+  const [modoRoaming, setModoRoaming] = useState(false);
+  const origenRef = useRef<string | undefined>(undefined);
 
   const segundosBien = useRef(0);
   const segundosEnExceso = useRef(0);
@@ -176,6 +178,15 @@ export default function Conducir() {
     setMostrarLimite(false);
     resetearViaje();
     setViajeActivo(true);
+    // Capturar origen
+    Location.getCurrentPositionAsync({}).then(loc => {
+      Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }).then(res => {
+        if (res.length > 0) {
+          const r = res[0];
+          origenRef.current = r.district || r.subregion || r.city || undefined;
+        }
+      }).catch(() => {});
+    }).catch(() => {});
   };
 
   const confirmarManual = () => {
@@ -204,6 +215,12 @@ export default function Conducir() {
     if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); return; }
 
     const velocidadPromedio = muestrasVelocidad.current > 0 ? Math.round(totalVelocidades.current / muestrasVelocidad.current) : 0;
+    let destinoBarrio: string | undefined;
+    try {
+      const loc = await Location.getCurrentPositionAsync({});
+      const res = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      if (res.length > 0) { const r = res[0]; destinoBarrio = r.district || r.subregion || r.city || undefined; }
+    } catch (e) {}
     const distanciaKm = Math.round(distanciaM.current / 100) / 10;
     const vActivo = await AsyncStorage.getItem('vehiculoActivo');
     const vehiculoStr = vActivo ? JSON.parse(vActivo) : null;
@@ -214,6 +231,9 @@ export default function Conducir() {
       distanciaKm, limite, eventos: eventosViaje.current,
       ruta: rutaViaje.current, vehiculo: vehiculoNombre,
       segundosEnExceso: segundosEnExceso.current,
+      origenBarrio: origenRef.current,
+      destinoBarrio,
+      tipoVehiculo: vehiculoStr?.tipo,
     });
     setViajeActivo(false);
     setTopSpeed(0);
@@ -267,7 +287,7 @@ export default function Conducir() {
           }
           const kmh = (gpsLento && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
 
-          if (kmh > 0 && viajeActivo) {
+          if (kmh > 0 && (viajeActivo || modoRoaming)) {
             if (ultimaPos.current) {
               const dlat = latitude - ultimaPos.current.lat;
               const dlon = longitude - ultimaPos.current.lon;
@@ -405,6 +425,16 @@ export default function Conducir() {
             </View>
           )}
           <BotonesViaje />
+          {!viajeActivo && (
+            <TouchableOpacity
+              style={[styles.btnRoaming, modoRoaming && styles.btnRoamingActivo]}
+              onPress={() => setModoRoaming(!modoRoaming)}
+            >
+              <Text style={[styles.btnRoamingTexto, modoRoaming && { color: C.marca }]}>
+                {modoRoaming ? '🎙 Modo libre activo' : 'Modo libre (sin registrar)'}
+              </Text>
+            </TouchableOpacity>
+          )}
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
         </View>
       )}
@@ -518,6 +548,9 @@ const styles = StyleSheet.create({
   btnTerminar: { marginTop: 20, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 32 },
   btnTerminarTexto: { color: C.rojo, fontSize: 16 },
   perfilTexto: { marginTop: 12, color: C.gris, fontSize: 12 },
+  btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
+  btnRoamingActivo: { borderColor: C.marca },
+  btnRoamingTexto: { color: C.gris, fontSize: 13 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
   modalBox: { backgroundColor: C.superficie, borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: C.marca },
   modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600', marginBottom: 12 },

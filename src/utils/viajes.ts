@@ -35,6 +35,12 @@ export interface Viaje {
   estrellas: number;
   score: string;
   vehiculo?: string;
+  tipoVehiculo?: string;
+  origenBarrio?: string;
+  destinoBarrio?: string;
+  tipoVehiculo?: string;
+  origenBarrio?: string;
+  destinoBarrio?: string;
   ruta?: PuntoGPS[];
   semana: string; // formato YYYY-WW
 }
@@ -56,6 +62,12 @@ export async function guardarViaje(viaje: {
   eventos: Evento[];
   ruta: PuntoGPS[];
   vehiculo?: string;
+  tipoVehiculo?: string;
+  origenBarrio?: string;
+  destinoBarrio?: string;
+  tipoVehiculo?: string;
+  origenBarrio?: string;
+  destinoBarrio?: string;
   segundosEnExceso: number;
 }): Promise<void> {
   const resumen = calcularResumen(viaje.duracion, viaje.eventos.length, viaje.segundosEnExceso);
