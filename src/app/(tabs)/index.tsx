@@ -124,11 +124,16 @@ export default function Conducir() {
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    Accelerometer.setUpdateInterval(500);
+    Accelerometer.setUpdateInterval(200);
     const accelSub = Accelerometer.addListener(({ x, y, z }) => {
       const magnitud = Math.sqrt(x * x + y * y + z * z);
       accelMagnitud.current = magnitud;
       quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.12;
+      setDebugInfo(prev => ({
+        ...prev,
+        accel: Math.round(magnitud * 100) / 100,
+        quieto: Math.abs(magnitud - 1) < 0.12,
+      }));
     });
     return () => accelSub.remove();
   }, []);
