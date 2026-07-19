@@ -282,7 +282,7 @@ export default function Conducir() {
             }
           } else if (gpsLento && !telefonoQuieto) {
             segundosBajoVelocidad.current++;
-            if (segundosBajoVelocidad.current >= 5) {
+            if (segundosBajoVelocidad.current >= 8) {
               if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
                 timerDesaceleracion.current = setInterval(() => {
                   velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 3);
@@ -297,7 +297,7 @@ export default function Conducir() {
             velocidadDisplay.current = kmhReal;
             setVelocidad(kmhReal);
           }
-          const kmh = (gpsLento && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
+          const kmh = (gpsLento && telefonoQuieto && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
 
           if (kmh > 0 && (viajeActivo || modoRoaming)) {
             if (ultimaPos.current) {
