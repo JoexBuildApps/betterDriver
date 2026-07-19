@@ -52,7 +52,8 @@
             "imageWidth": 200
           }
         }
-      ]
+      ],
+      "expo-sensors"
     ],
     "experiments": {
       "typedRoutes": true,
