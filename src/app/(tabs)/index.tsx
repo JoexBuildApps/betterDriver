@@ -480,7 +480,7 @@ export default function Conducir() {
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
 
 
-        </View>
+        </ScrollView>
       )}
 
       <Modal visible={mostrarSelectorModo} transparent animationType="fade">
