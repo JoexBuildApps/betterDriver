@@ -284,29 +284,18 @@ export default function Conducir() {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
           const telefonoQuieto = quietoAcelerometro.current;
+          const gpsLento = kmhReal < 20;
 
-          // Acelerometro es el arbitro principal - GPS del A05s tiene deriva fuerte
-          if (telefonoQuieto) {
+          // GPS manda siempre - acelerometro solo confirma parada cuando GPS < 20
+          if (gpsLento && telefonoQuieto) {
             segundosBajoVelocidad.current++;
-            if (segundosBajoVelocidad.current >= 2) {
+            if (segundosBajoVelocidad.current >= 3) {
               if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
                 timerDesaceleracion.current = setInterval(() => {
-                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 6);
+                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 5);
                   setVelocidad(velocidadDisplay.current);
                   if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
                 }, 300);
-              }
-            }
-          } else if (kmhReal < 8) {
-            // Sin movimiento en acelerometro pero GPS bajo - esperar mas
-            segundosBajoVelocidad.current++;
-            if (segundosBajoVelocidad.current >= 8) {
-              if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
-                timerDesaceleracion.current = setInterval(() => {
-                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 3);
-                  setVelocidad(velocidadDisplay.current);
-                  if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
-                }, 400);
               }
             }
           } else {
@@ -315,7 +304,7 @@ export default function Conducir() {
             velocidadDisplay.current = kmhReal;
             setVelocidad(kmhReal);
           }
-          const kmh = (telefonoQuieto && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
+          const kmh = (gpsLento && telefonoQuieto && segundosBajoVelocidad.current >= 3) ? 0 : kmhReal;
 
           if (kmh > 0 && (viajeActivo || modoRoaming)) {
             if (ultimaPos.current) {
@@ -486,8 +475,8 @@ export default function Conducir() {
       <Modal visible={mostrarSelectorModo} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <ScrollView
-            style={{ width: '90%', maxHeight: '90%' }}
-            contentContainerStyle={{ borderRadius: 20 }}
+            style={{ width: '100%' }}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -495,9 +484,9 @@ export default function Conducir() {
             <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
 
             {/* Selector de modo */}
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: height * 0.02 }}>
               <TouchableOpacity
-                style={[styles.modoBtnCompacto, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]}
+                style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]}
                 onPress={() => setEsRoaming(true)}
               >
                 <Text style={styles.modoBtnIcon}>🎙</Text>
@@ -505,7 +494,7 @@ export default function Conducir() {
                 <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modoBtnCompacto, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]}
+                style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]}
                 onPress={() => setEsRoaming(false)}
               >
                 <Text style={styles.modoBtnIcon}>🚗</Text>
@@ -720,11 +709,11 @@ const styles = StyleSheet.create({
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
   btnRoamingTexto: { color: C.gris, fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' },
-  modalBox: { backgroundColor: 'rgba(18, 31, 55, 0.97)', borderRadius: 20, padding: 24, width: '85%', borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  modalBox: { backgroundColor: 'rgba(18, 31, 55, 0.97)', borderRadius: 20, padding: 16, width: '100%', borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)' },
   modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  limitesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 16 },
-  limiteOpcion: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: C.divider, alignItems: 'center', justifyContent: 'center' },
+  limitesGrid: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 16 },
+  limiteOpcion: { flex: 1, aspectRatio: 1, borderRadius: 999, borderWidth: 2, borderColor: C.divider, alignItems: 'center', justifyContent: 'center', maxHeight: 64 },
   limiteOpcionActiva: { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.15)' },
   limiteOpcionTexto: { color: C.gris, fontSize: 16, fontWeight: '500' },
   limiteOpcionTextoActiva: { color: C.marca },
