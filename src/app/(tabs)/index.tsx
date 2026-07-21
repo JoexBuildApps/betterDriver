@@ -474,109 +474,112 @@ export default function Conducir() {
 
       <Modal visible={mostrarSelectorModo} transparent animationType="fade">
         <View style={[styles.modalOverlay, { paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
-          <ScrollView
-            style={{ width: '100%', maxHeight: isLandscape ? height * 0.85 : height * 0.9 }}
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
-
-            {/* Selector de modo */}
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: height * 0.02 }}>
-              <TouchableOpacity
-                style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]}
-                onPress={() => setEsRoaming(true)}
-              >
-                <Text style={styles.modoBtnIcon}>🎙</Text>
-                <Text style={[styles.modoBtnTituloCompacto, esRoaming && { color: C.marca }]}>Modo libre</Text>
-                <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]}
-                onPress={() => setEsRoaming(false)}
-              >
-                <Text style={styles.modoBtnIcon}>🚗</Text>
-                <Text style={[styles.modoBtnTituloCompacto, !esRoaming && { color: C.verde }]}>Iniciar viaje</Text>
-                <Text style={styles.modoBtnSubCompacto}>Con historial</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Selector de velocidad */}
-            <Text style={[styles.modalTitulo, { fontSize: 15, marginBottom: 10 }]}>¿Límite de velocidad?</Text>
-            <View style={styles.limitesGrid}>
-              <TouchableOpacity
-                style={[styles.limiteOpcion, modoManual && styles.limiteOpcionActiva]}
-                onPress={() => { setModoManual(true); }}
-              >
-                <Text style={[styles.limiteOpcionTexto, modoManual && styles.limiteOpcionTextoActiva]}>Manual</Text>
-              </TouchableOpacity>
-              {[50, 60, 70, 80].map(l => (
-                <TouchableOpacity
-                  key={l}
-                  style={[styles.limiteOpcion, limiteTemp === l && !modoManual && styles.limiteOpcionActiva]}
-                  onPress={() => { setModoManual(false); setLimiteTemp(l); }}
-                >
-                  <Text style={[styles.limiteOpcionTexto, limiteTemp === l && !modoManual && styles.limiteOpcionTextoActiva]}>{l}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {modoManual && (
-              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-                <TextInput
-                  style={styles.manualInput}
-                  value={limiteManual}
-                  onChangeText={setLimiteManual}
-                  placeholder="Ej: 45"
-                  placeholderTextColor={C.gris}
-                  keyboardType="numeric"
-                  maxLength={3}
-                  autoFocus
-                />
-              </View>
-            )}
-
-            {/* Selector de vehiculo - solo si hay 2+ y es viaje */}
-            {!esRoaming && vehiculos.length > 1 && (
-              <>
-                <Text style={[styles.modalTitulo, { fontSize: 15, marginBottom: 10 }]}>¿En qué carro?</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-                  {vehiculos.map((v, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[styles.vehiculoBtn, vehiculoSeleccionado?.marca === v.marca && vehiculoSeleccionado?.modelo === v.modelo && styles.vehiculoBtnActivo]}
-                      onPress={() => setVehiculoSeleccionado(v)}
-                    >
-                      <Text style={[styles.vehiculoBtnTexto, vehiculoSeleccionado?.marca === v.marca && vehiculoSeleccionado?.modelo === v.modelo && styles.vehiculoBtnTextoActivo]}>
-                        {v.tipo?.split(' ')[0] || '🚗'} {v.marca} {v.modelo}
-                      </Text>
-                      <Text style={styles.vehiculoBtnAnio}>{v.anio}</Text>
+          {isLandscape ? (
+            <View style={{ flexDirection: 'row', width: '95%', maxHeight: '90%', gap: 10 }}>
+              <View style={[styles.modalBox, { flex: 1 }]}>
+                <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64 }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]} onPress={() => setEsRoaming(true)}>
+                    <Text style={styles.modoBtnIcon}>🎙</Text>
+                    <Text style={[styles.modoBtnTituloCompacto, esRoaming && { color: C.marca }]}>Modo libre</Text>
+                    <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64 }, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]} onPress={() => setEsRoaming(false)}>
+                    <Text style={styles.modoBtnIcon}>🚗</Text>
+                    <Text style={[styles.modoBtnTituloCompacto, !esRoaming && { color: C.verde }]}>Iniciar viaje</Text>
+                    <Text style={styles.modoBtnSubCompacto}>Con historial</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.modalTitulo, { fontSize: 13, marginBottom: 8 }]}>¿Límite?</Text>
+                <View style={styles.limitesGrid}>
+                  <TouchableOpacity style={[styles.limiteOpcion, modoManual && styles.limiteOpcionActiva]} onPress={() => setModoManual(true)}>
+                    <Text style={[styles.limiteOpcionTexto, modoManual && styles.limiteOpcionTextoActiva]}>M</Text>
+                  </TouchableOpacity>
+                  {[50, 60, 70, 80].map(l => (
+                    <TouchableOpacity key={l} style={[styles.limiteOpcion, limiteTemp === l && !modoManual && styles.limiteOpcionActiva]} onPress={() => { setModoManual(false); setLimiteTemp(l); }}>
+                      <Text style={[styles.limiteOpcionTexto, limiteTemp === l && !modoManual && styles.limiteOpcionTextoActiva]}>{l}</Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
-              </>
-            )}
+                </View>
+                {modoManual && <TextInput style={[styles.manualInput, { marginTop: 8 }]} value={limiteManual} onChangeText={setLimiteManual} placeholder="km/h" placeholderTextColor={C.gris} keyboardType="numeric" maxLength={3} autoFocus />}
+              </View>
 
-            {/* Boton empezar */}
-            <TouchableOpacity
-              style={[styles.btnEmpezar, { backgroundColor: esRoaming ? C.marca : C.verde }]}
-              onPress={() => {
-                const l = modoManual ? parseInt(limiteManual) || limiteTemp : limiteTemp;
-                if (esRoaming) {
-                  iniciarRoaming(l);
-                } else {
-                  confirmarLimite(l);
-                }
-              }}
-              disabled={modoManual && !limiteManual}
-            >
-              <Text style={styles.btnEmpezarTexto}>Empezar →</Text>
-            </TouchableOpacity>
+              <View style={{ width: 1, backgroundColor: C.divider, alignSelf: 'stretch' }} />
 
-          </View>
-          </ScrollView>
+              <View style={[styles.modalBox, { flex: 1, justifyContent: 'space-between' }]}>
+                {!esRoaming && vehiculos.length > 0 && (
+                  <>
+                    <Text style={[styles.modalTitulo, { marginBottom: 8 }]}>¿En qué carro?</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                      {vehiculos.map((v, i) => (
+                        <TouchableOpacity key={i} style={[styles.vehiculoBtn, vehiculoSeleccionado?.marca === v.marca && vehiculoSeleccionado?.modelo === v.modelo && styles.vehiculoBtnActivo]} onPress={() => setVehiculoSeleccionado(v)}>
+                          <Text style={[styles.vehiculoBtnTexto, vehiculoSeleccionado?.marca === v.marca && vehiculoSeleccionado?.modelo === v.modelo && styles.vehiculoBtnTextoActivo]}>{v.tipo?.split(' ')[0] || '🚗'} {v.marca} {v.modelo}</Text>
+                          <Text style={styles.vehiculoBtnAnio}>{v.anio}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity
+                  style={[styles.btnEmpezar, { backgroundColor: esRoaming ? C.marca : C.verde }]}
+                  onPress={() => { const l = modoManual ? parseInt(limiteManual) || limiteTemp : limiteTemp; if (esRoaming) { iniciarRoaming(l); } else { confirmarLimite(l); } }}
+                >
+                  <Text style={styles.btnEmpezarTexto}>Empezar →</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <ScrollView style={{ width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <View style={[styles.modalBox, { width: '100%' }]}>
+                <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]} onPress={() => setEsRoaming(true)}>
+                    <Text style={styles.modoBtnIcon}>🎙</Text>
+                    <Text style={[styles.modoBtnTituloCompacto, esRoaming && { color: C.marca }]}>Modo libre</Text>
+                    <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]} onPress={() => setEsRoaming(false)}>
+                    <Text style={styles.modoBtnIcon}>🚗</Text>
+                    <Text style={[styles.modoBtnTituloCompacto, !esRoaming && { color: C.verde }]}>Iniciar viaje</Text>
+                    <Text style={styles.modoBtnSubCompacto}>Con historial</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.modalTitulo, { fontSize: 15, marginBottom: 10 }]}>¿Límite de velocidad?</Text>
+                <View style={styles.limitesGrid}>
+                  <TouchableOpacity style={[styles.limiteOpcion, modoManual && styles.limiteOpcionActiva]} onPress={() => { setModoManual(true); }}>
+                    <Text style={[styles.limiteOpcionTexto, modoManual && styles.limiteOpcionTextoActiva]}>Manual</Text>
+                  </TouchableOpacity>
+                  {[50, 60, 70, 80].map(l => (
+                    <TouchableOpacity key={l} style={[styles.limiteOpcion, limiteTemp === l && !modoManual && styles.limiteOpcionActiva]} onPress={() => { setModoManual(false); setLimiteTemp(l); }}>
+                      <Text style={[styles.limiteOpcionTexto, limiteTemp === l && !modoManual && styles.limiteOpcionTextoActiva]}>{l}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {modoManual && (
+                  <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+                    <TextInput style={styles.manualInput} value={limiteManual} onChangeText={setLimiteManual} placeholder="Ej: 45" placeholderTextColor={C.gris} keyboardType="numeric" maxLength={3} autoFocus />
+                  </View>
+                )}
+                {!esRoaming && vehiculos.length > 1 && (
+                  <>
+                    <Text style={[styles.modalTitulo, { fontSize: 15, marginBottom: 10 }]}>¿En qué carro?</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                      {vehiculos.map((v, i) => (
+                        <TouchableOpacity key={i} style={[styles.vehiculoBtn, vehiculoSeleccionado?.marca === v.marca && vehiculoSeleccionado?.modelo === v.modelo && styles.vehiculoBtnActivo]} onPress={() => setVehiculoSeleccionado(v)}>
+                          <Text style={[styles.vehiculoBtnTexto, vehiculoSeleccionado?.marca === v.marca && vehiculoSeleccionado?.modelo === v.modelo && styles.vehiculoBtnTextoActivo]}>{v.tipo?.split(' ')[0] || '🚗'} {v.marca} {v.modelo}</Text>
+                          <Text style={styles.vehiculoBtnAnio}>{v.anio}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </>
+                )}
+                <TouchableOpacity style={[styles.btnEmpezar, { backgroundColor: esRoaming ? C.marca : C.verde }]} onPress={() => { const l = modoManual ? parseInt(limiteManual) || limiteTemp : limiteTemp; if (esRoaming) { iniciarRoaming(l); } else { confirmarLimite(l); } }} disabled={modoManual && !limiteManual}>
+                  <Text style={styles.btnEmpezarTexto}>Empezar →</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
         </View>
       </Modal>
 
