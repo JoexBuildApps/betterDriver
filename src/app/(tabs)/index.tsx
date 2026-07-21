@@ -473,9 +473,9 @@ export default function Conducir() {
       )}
 
       <Modal visible={mostrarSelectorModo} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
           <ScrollView
-            style={{ width: '100%' }}
+            style={{ width: '100%', maxHeight: isLandscape ? height * 0.85 : height * 0.9 }}
             contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
   btnRoamingTexto: { color: C.gris, fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center', padding: 16 },
   modalBox: { backgroundColor: 'rgba(18, 31, 55, 0.97)', borderRadius: 20, padding: 16, width: '100%', borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)' },
   modalTitulo: { color: C.blanco, fontSize: 18, fontWeight: '600', marginBottom: 12 },
   limitesGrid: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 16 },
