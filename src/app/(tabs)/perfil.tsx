@@ -213,7 +213,7 @@ export default function Perfil() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { paddingLeft: insets.left, paddingRight: insets.right }]}
       contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
     >
       {/* Header con avatar */}

@@ -131,8 +131,7 @@ export default function Conducir() {
     const accelSub = Accelerometer.addListener(({ x, y, z }) => {
       const magnitud = Math.sqrt(x * x + y * y + z * z);
       accelMagnitud.current = magnitud;
-      quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.05;
-      const quieto = Math.abs(magnitud - 1) < 0.12;
+      const quieto = Math.abs(magnitud - 1) < 0.05;
       quietoAcelerometro.current = quieto;
       AsyncStorage.setItem('debugAccel', JSON.stringify({ accel: Math.round(magnitud * 100) / 100, quieto }));
       setDebugInfo(prev => ({ ...prev, accel: Math.round(magnitud * 100) / 100, quieto }));
@@ -698,7 +697,7 @@ const styles = StyleSheet.create({
   btnEmpezar: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 32, alignItems: 'center', marginTop: 4 },
   btnEmpezarTexto: { color: C.fondo, fontSize: 16, fontWeight: 'bold' },
   modoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', marginBottom: 12 },
-  modoBtnIcon: { fontSize: 28 },
+  modoBtnIcon: { fontSize: 22 },
   modoBtnTitulo: { color: C.marca, fontSize: 16, fontWeight: '600' },
   modoBtnSub: { color: C.gris, fontSize: 12, marginTop: 2 },
   debugBtn: { marginTop: 8, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#223452' },
