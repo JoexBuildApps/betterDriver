@@ -587,6 +587,7 @@ export default function Conducir() {
             </TouchableOpacity>
 
           </View>
+          </ScrollView>
         </View>
       </Modal>
 
