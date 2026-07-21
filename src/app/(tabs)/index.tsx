@@ -131,7 +131,7 @@ export default function Conducir() {
     const accelSub = Accelerometer.addListener(({ x, y, z }) => {
       const magnitud = Math.sqrt(x * x + y * y + z * z);
       accelMagnitud.current = magnitud;
-      quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.12;
+      quietoAcelerometro.current = Math.abs(magnitud - 1) < 0.05;
       const quieto = Math.abs(magnitud - 1) < 0.12;
       quietoAcelerometro.current = quieto;
       AsyncStorage.setItem('debugAccel', JSON.stringify({ accel: Math.round(magnitud * 100) / 100, quieto }));
@@ -284,7 +284,7 @@ export default function Conducir() {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
           const telefonoQuieto = quietoAcelerometro.current;
-          const gpsLento = kmhReal < 20;
+          const gpsLento = kmhReal < 10;
 
           // GPS manda siempre - acelerometro solo confirma parada cuando GPS < 20
           if (gpsLento && telefonoQuieto) {
@@ -479,12 +479,12 @@ export default function Conducir() {
               <View style={[styles.modalBox, { flex: 1 }]}>
                 <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64 }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]} onPress={() => setEsRoaming(true)}>
+                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64, alignItems: 'center', justifyContent: 'center' }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]} onPress={() => setEsRoaming(true)}>
                     <Text style={styles.modoBtnIcon}>🎙</Text>
                     <Text style={[styles.modoBtnTituloCompacto, esRoaming && { color: C.marca }]}>Modo libre</Text>
                     <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64 }, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]} onPress={() => setEsRoaming(false)}>
+                  <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64, alignItems: 'center', justifyContent: 'center' }, !esRoaming && { borderColor: C.verde, backgroundColor: 'rgba(48,209,88,0.1)' }]} onPress={() => setEsRoaming(false)}>
                     <Text style={styles.modoBtnIcon}>🚗</Text>
                     <Text style={[styles.modoBtnTituloCompacto, !esRoaming && { color: C.verde }]}>Iniciar viaje</Text>
                     <Text style={styles.modoBtnSubCompacto}>Con historial</Text>
