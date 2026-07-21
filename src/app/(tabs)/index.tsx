@@ -485,6 +485,12 @@ export default function Conducir() {
 
       <Modal visible={mostrarSelectorModo} transparent animationType="fade">
         <View style={styles.modalOverlay}>
+          <ScrollView
+            style={{ width: '90%', maxHeight: '90%' }}
+            contentContainerStyle={{ borderRadius: 20 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
           <View style={styles.modalBox}>
             <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
 
@@ -696,7 +702,7 @@ const styles = StyleSheet.create({
   modoBtnCompacto: { flex: 1, alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: C.divider, gap: 4 },
   modoBtnTituloCompacto: { color: C.gris, fontSize: 14, fontWeight: '600' },
   modoBtnSubCompacto: { color: C.gris, fontSize: 11 },
-  btnEmpezar: { padding: 16, borderRadius: 32, alignItems: 'center', marginTop: 4 },
+  btnEmpezar: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 32, alignItems: 'center', marginTop: 4 },
   btnEmpezarTexto: { color: C.fondo, fontSize: 16, fontWeight: 'bold' },
   modoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', marginBottom: 12 },
   modoBtnIcon: { fontSize: 28 },
