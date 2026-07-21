@@ -283,21 +283,22 @@ export default function Conducir() {
           if (modoDebug) {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
-          const gpsLento = kmhReal < 8;
           const telefonoQuieto = quietoAcelerometro.current;
 
-          if (gpsLento && telefonoQuieto) {
+          // Acelerometro es el arbitro principal - GPS del A05s tiene deriva fuerte
+          if (telefonoQuieto) {
             segundosBajoVelocidad.current++;
             if (segundosBajoVelocidad.current >= 2) {
               if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
                 timerDesaceleracion.current = setInterval(() => {
-                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 8);
+                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 6);
                   setVelocidad(velocidadDisplay.current);
                   if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
-                }, 200);
+                }, 300);
               }
             }
-          } else if (gpsLento && !telefonoQuieto) {
+          } else if (kmhReal < 8) {
+            // Sin movimiento en acelerometro pero GPS bajo - esperar mas
             segundosBajoVelocidad.current++;
             if (segundosBajoVelocidad.current >= 8) {
               if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
@@ -314,7 +315,7 @@ export default function Conducir() {
             velocidadDisplay.current = kmhReal;
             setVelocidad(kmhReal);
           }
-          const kmh = (gpsLento && telefonoQuieto && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
+          const kmh = (telefonoQuieto && segundosBajoVelocidad.current >= 2) ? 0 : kmhReal;
 
           if (kmh > 0 && (viajeActivo || modoRoaming)) {
             if (ultimaPos.current) {
@@ -461,7 +462,7 @@ export default function Conducir() {
           </View>
         </View>
       ) : (
-        <View style={styles.portraitContainer}>
+        <ScrollView contentContainerStyle={styles.portraitContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.portraitHeader}><HeaderStats /></View>
           <Velocimetro velocidad={kmhToDisplay(velocidad)} limite={limite} size={velocimetroSize} unidadLabel={unidadLabel} />
           <View style={styles.limiteRow}>
