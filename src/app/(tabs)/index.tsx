@@ -131,7 +131,7 @@ export default function Conducir() {
     const accelSub = Accelerometer.addListener(({ x, y, z }) => {
       const magnitud = Math.sqrt(x * x + y * y + z * z);
       accelMagnitud.current = magnitud;
-      const quieto = Math.abs(magnitud - 1) < 0.05;
+      const quieto = Math.abs(magnitud - 1) < 0.08;
       quietoAcelerometro.current = quieto;
       AsyncStorage.setItem('debugAccel', JSON.stringify({ accel: Math.round(magnitud * 100) / 100, quieto }));
       setDebugInfo(prev => ({ ...prev, accel: Math.round(magnitud * 100) / 100, quieto }));
