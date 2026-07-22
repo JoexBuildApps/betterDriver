@@ -282,28 +282,25 @@ export default function Conducir() {
           if (modoDebug) {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
-          const telefonoQuieto = quietoAcelerometro.current;
-          const gpsLento = kmhReal < 10;
+          const { accuracy } = location.coords;
+          const lecturaConfiable = accuracy !== null && accuracy <= 25;
 
-          // GPS manda siempre - acelerometro solo confirma parada cuando GPS < 20
-          if (gpsLento && telefonoQuieto) {
-            segundosBajoVelocidad.current++;
-            if (segundosBajoVelocidad.current >= 3) {
-              if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
-                timerDesaceleracion.current = setInterval(() => {
-                  velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 5);
-                  setVelocidad(velocidadDisplay.current);
-                  if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
-                }, 300);
-              }
-            }
-          } else {
-            segundosBajoVelocidad.current = 0;
+          if (lecturaConfiable) {
+            // GPS con buena señal - usar velocidad real y resetear failsafe
             if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
             velocidadDisplay.current = kmhReal;
             setVelocidad(kmhReal);
+          } else {
+            // GPS con mala señal - ignorar lectura, activar failsafe
+            if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
+              timerDesaceleracion.current = setInterval(() => {
+                velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 1);
+                setVelocidad(velocidadDisplay.current);
+                if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
+              }, 300);
+            }
           }
-          const kmh = (gpsLento && telefonoQuieto && segundosBajoVelocidad.current >= 3) ? 0 : kmhReal;
+          const kmh = velocidadDisplay.current;
 
           if (kmh > 0 && (viajeActivo || modoRoaming)) {
             if (ultimaPos.current) {
@@ -691,13 +688,13 @@ const styles = StyleSheet.create({
   btnTerminar: { marginTop: 20, borderColor: C.rojo, borderWidth: 1, paddingHorizontal: 40, paddingVertical: 14, borderRadius: 32 },
   btnTerminarTexto: { color: C.rojo, fontSize: 16 },
   perfilTexto: { marginTop: 12, color: C.gris, fontSize: 12 },
-  modoBtnCompacto: { flex: 1, alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: C.divider, gap: 4 },
+  modoBtnCompacto: { flex: 1, alignItems: 'center', padding: 10, borderRadius: 16, borderWidth: 1, borderColor: C.divider, gap: 2, overflow: 'hidden' },
   modoBtnTituloCompacto: { color: C.gris, fontSize: 14, fontWeight: '600' },
   modoBtnSubCompacto: { color: C.gris, fontSize: 11 },
   btnEmpezar: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 32, alignItems: 'center', marginTop: 4 },
   btnEmpezarTexto: { color: C.fondo, fontSize: 16, fontWeight: 'bold' },
   modoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', marginBottom: 12 },
-  modoBtnIcon: { fontSize: 22 },
+  modoBtnIcon: { fontSize: 18 },
   modoBtnTitulo: { color: C.marca, fontSize: 16, fontWeight: '600' },
   modoBtnSub: { color: C.gris, fontSize: 12, marginTop: 2 },
   debugBtn: { marginTop: 8, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#223452' },
