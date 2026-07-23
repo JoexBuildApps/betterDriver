@@ -16,7 +16,7 @@ import { C } from '../../utils/colors';
 const VELOCIDAD_MINIMA = 8;
 const TIEMPO_NUEVO_VIAJE = 3 * 60 * 1000;
 const TOLERANCIA = 1.10;
-const LIMITES_OPCIONES = [50, 60, 70, 80];
+const LIMITES_OPCIONES = [48, 58, 68, 78];
 
 function Velocimetro({ velocidad, limite, size = 260, unidadLabel = 'km/h' }: { velocidad: number; limite: number; size?: number; unidadLabel?: string }) {
   const cx = size / 2;
@@ -91,6 +91,7 @@ export default function Conducir() {
   const ultimaPos = useRef<{ lat: number; lon: number } | null>(null);
   const historialVelocidad = useRef<number[]>([]);
   const timerDesaceleracion = useRef<any>(null);
+  const timerSubida = useRef<any>(null);
   const segundosBajoVelocidad = useRef(0);
   const velocidadDisplay = useRef(0);
   const accelMagnitud = useRef(0);
@@ -235,6 +236,7 @@ export default function Conducir() {
   const terminarViaje = async () => {
     if (timerParado.current) clearTimeout(timerParado.current);
     if (timerMensajeAleatorio.current) clearTimeout(timerMensajeAleatorio.current);
+    if (timerSubida.current) clearInterval(timerSubida.current);
     const duracion = Math.round((Date.now() - inicioViaje.current) / 1000);
     if (duracion < 60 || distanciaM.current < 100) { setViajeActivo(false); return; }
 
@@ -276,7 +278,7 @@ export default function Conducir() {
           // Si GPS raw es 0 o casi 0, limpiar historial para no contaminar promedio
           if (rawKmh < 2) historialVelocidad.current = [];
           historialVelocidad.current.push(rawKmh);
-          if (historialVelocidad.current.length > 5) historialVelocidad.current.shift();
+          if (historialVelocidad.current.length > 2) historialVelocidad.current.shift();
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
           const kmhReal = Math.round(promRaw);
 
@@ -284,16 +286,18 @@ export default function Conducir() {
           if (modoDebug) {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
-          const { accuracy } = location.coords;
-          const lecturaConfiable = accuracy !== null && accuracy <= 25;
-
-          if (lecturaConfiable) {
-            // GPS con buena señal - usar velocidad real y resetear failsafe
+          // Failsafe SIEMPRE activo - GPS solo puede SUBIR la velocidad
+          if (kmhReal > velocidadDisplay.current) {
             if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
-            velocidadDisplay.current = kmhReal;
-            setVelocidad(kmhReal);
+            if (!timerSubida.current) {
+              timerSubida.current = setInterval(() => {
+                if (velocidadDisplay.current >= kmhReal) { clearInterval(timerSubida.current); timerSubida.current = null; return; }
+                velocidadDisplay.current = Math.min(kmhReal, velocidadDisplay.current + 1);
+                setVelocidad(velocidadDisplay.current);
+              }, 80);
+            }
           } else {
-            // GPS con mala señal - ignorar lectura, activar failsafe
+            if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
             if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
               timerDesaceleracion.current = setInterval(() => {
                 velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 1);
@@ -400,9 +404,20 @@ export default function Conducir() {
     }
     if (viajeActivo) {
       return (
-        <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
-          <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
-        </TouchableOpacity>
+        <View style={{ alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity style={styles.btnAjuste} onPress={() => { const n = Math.max(20, limite - 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
+              <Text style={styles.btnAjusteTexto}>−5</Text>
+            </TouchableOpacity>
+            <Text style={{ color: C.gris, fontSize: 13 }}>límite: <Text style={{ color: C.blanco, fontWeight: '600' }}>{limite}</Text></Text>
+            <TouchableOpacity style={styles.btnAjuste} onPress={() => { const n = Math.min(120, limite + 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
+              <Text style={styles.btnAjusteTexto}>+5</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
+            <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
+          </TouchableOpacity>
+        </View>
       );
     }
     return (
@@ -493,7 +508,7 @@ export default function Conducir() {
                   <TouchableOpacity style={[styles.limiteOpcion, modoManual && styles.limiteOpcionActiva]} onPress={() => setModoManual(true)}>
                     <Text style={[styles.limiteOpcionTexto, modoManual && styles.limiteOpcionTextoActiva]}>M</Text>
                   </TouchableOpacity>
-                  {[50, 60, 70, 80].map(l => (
+                  {[48, 58, 68, 78].map(l => (
                     <TouchableOpacity key={l} style={[styles.limiteOpcion, limiteTemp === l && !modoManual && styles.limiteOpcionActiva]} onPress={() => { setModoManual(false); setLimiteTemp(l); }}>
                       <Text style={[styles.limiteOpcionTexto, limiteTemp === l && !modoManual && styles.limiteOpcionTextoActiva]}>{l}</Text>
                     </TouchableOpacity>
@@ -548,7 +563,7 @@ export default function Conducir() {
                   <TouchableOpacity style={[styles.limiteOpcion, modoManual && styles.limiteOpcionActiva]} onPress={() => { setModoManual(true); }}>
                     <Text style={[styles.limiteOpcionTexto, modoManual && styles.limiteOpcionTextoActiva]}>Manual</Text>
                   </TouchableOpacity>
-                  {[50, 60, 70, 80].map(l => (
+                  {[48, 58, 68, 78].map(l => (
                     <TouchableOpacity key={l} style={[styles.limiteOpcion, limiteTemp === l && !modoManual && styles.limiteOpcionActiva]} onPress={() => { setModoManual(false); setLimiteTemp(l); }}>
                       <Text style={[styles.limiteOpcionTexto, limiteTemp === l && !modoManual && styles.limiteOpcionTextoActiva]}>{l}</Text>
                     </TouchableOpacity>
@@ -705,6 +720,8 @@ const styles = StyleSheet.create({
   debugTitulo: { color: '#2EE6C5', fontSize: 13, fontWeight: '600', marginBottom: 8 },
   debugLinea: { color: '#A4B2C5', fontSize: 12, marginBottom: 4 },
   debugValor: { color: '#F4F8FC', fontWeight: '600' },
+  btnAjuste: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider, backgroundColor: C.superficie },
+  btnAjusteTexto: { color: C.marca, fontSize: 16, fontWeight: '600' },
   btnModoLibre: { flex: 1, paddingVertical: 14, borderRadius: 32, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', alignItems: 'center' },
   btnModoLibreTexto: { color: C.marca, fontSize: 15, fontWeight: '500' },
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
