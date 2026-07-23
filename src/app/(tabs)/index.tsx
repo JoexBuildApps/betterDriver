@@ -269,10 +269,12 @@ export default function Conducir() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
       suscripcion = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 5 },
+        { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 5 },
         (location) => {
           const { latitude, longitude, speed } = location.coords;
           const rawKmh = (speed ?? 0) * 3.6;
+          // Si GPS raw es 0 o casi 0, limpiar historial para no contaminar promedio
+          if (rawKmh < 2) historialVelocidad.current = [];
           historialVelocidad.current.push(rawKmh);
           if (historialVelocidad.current.length > 5) historialVelocidad.current.shift();
           const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
