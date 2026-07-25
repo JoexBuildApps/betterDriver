@@ -38,9 +38,6 @@ export interface Viaje {
   tipoVehiculo?: string;
   origenBarrio?: string;
   destinoBarrio?: string;
-  tipoVehiculo?: string;
-  origenBarrio?: string;
-  destinoBarrio?: string;
   ruta?: PuntoGPS[];
   semana: string; // formato YYYY-WW
 }
@@ -62,9 +59,6 @@ export async function guardarViaje(viaje: {
   eventos: Evento[];
   ruta: PuntoGPS[];
   vehiculo?: string;
-  tipoVehiculo?: string;
-  origenBarrio?: string;
-  destinoBarrio?: string;
   tipoVehiculo?: string;
   origenBarrio?: string;
   destinoBarrio?: string;
@@ -92,6 +86,9 @@ export async function guardarViaje(viaje: {
     estrellas,
     score,
     vehiculo: viaje.vehiculo,
+    tipoVehiculo: viaje.tipoVehiculo,
+    origenBarrio: viaje.origenBarrio,
+    destinoBarrio: viaje.destinoBarrio,
     ruta: viaje.ruta,
     semana: getSemana(viaje.fecha),
   };
@@ -129,4 +126,3 @@ export function formatearDuracion(segundos: number): string {
   const s = segundos % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
-
