@@ -31,9 +31,9 @@ function ScoreFlash({ score, color, estrellas }: { score: string; color: string;
   const stars = Array.from({ length: 5 }, (_, i) => i < estrellas ? '★' : '☆').join('');
 
   return (
-    <View style={{ alignItems: 'flex-end' }}>
+    <View style={styles.scoreFlashWrap}>
       <Animated.Text style={[styles.estrellas, { color, opacity: anim }]}>{stars}</Animated.Text>
-      <Text style={[styles.score, { color }]}>{score}</Text>
+      <Text style={[styles.score, { color }]} numberOfLines={2}>{score}</Text>
     </View>
   );
 }
@@ -400,9 +400,10 @@ const styles = StyleSheet.create({
     borderColor: C.borde,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  fecha: { color: C.gris, fontSize: 12 },
+  fecha: { color: C.gris, fontSize: 12, flexShrink: 1, flexGrow: 1, marginRight: 8 },
+  scoreFlashWrap: { alignItems: 'flex-end', flexShrink: 0, maxWidth: '55%' },
   estrellas: { fontSize: 22, letterSpacing: 2 },
-  score: { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  score: { fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'right' },
   barraContainer: { height: 3, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, marginBottom: 12, overflow: 'hidden' },
   barraFill: { height: 3, borderRadius: 2 },
   cardBody: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
