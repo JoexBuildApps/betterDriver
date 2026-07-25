@@ -1,5 +1,30 @@
 # betterDriver — Release Notes
 
+## v1.2.0 — GPS + UX (pendiente compilar AAB)
+
+### Bugfixes
+- GPS: nueva verificación por posición (lat/lon) — calcula velocidad real a partir del desplazamiento entre lecturas y la usa para descartar el campo `speed` del GPS cuando reporta ruido (6, 7, 13 km/h) estando físicamente detenido en semáforo. El campo `speed` sufre multipath cerca de edificios; la posición no.
+- GPS: historial de suavizado cambiado de promedio de 2 lecturas a mediana de 4 — más robusto contra picos aislados de ruido
+- GPS: intervalo de bajada de velocidad reducido de 300ms a 200ms en ambos casos (ruido y bajada normal) — baja 5 km/h por segundo en vez de ~3.3
+- Fix bug de remount: `BotonesViaje` se invocaba como `<BotonesViaje />` (componente JSX) en vez de como función, lo que causaba que React desmontara y remontara el subárbol varias veces por segundo durante la conducción — esto hacía que "Terminar viaje" necesitara 4-5 taps para registrar, y probablemente afectaba también a −5/+5
+- Fix origen/destino: ahora prioriza nombre de calle (`r.street`) sobre localidad/distrito
+
+### UI
+- Botones "Modo libre" e "Iniciar viaje" ahora visualmente parejos (mismo relleno y sombra — antes Modo libre se veía más liviano por ser solo contorno)
+- Ícono de Modo libre cambiado de 🎙 (micrófono) a 🧭 (brújula)
+- Botones −5/+5 de ajuste de límite reactivados durante el viaje
+
+---
+
+## v1.1.1 — Bugfixes GPS + UI
+
+### Bugfixes
+- GPS: failsafe siempre activo — velocidad siempre tiende a 0
+- Fix overflow de estrellas/score en la tarjeta de viaje en "Mis viajes" (fecha + score largo se salían de la pantalla en dispositivos angostos)
+- Fix origenBarrio/destinoBarrio/tipoVehiculo no se guardaban en AsyncStorage — guardarViaje() recibía estos campos pero no los asignaba al objeto persistido
+
+---
+
 ## v1.1.0 — Bugfixes GPS + UI (pendiente compilar AAB)
 
 ### Bugfixes

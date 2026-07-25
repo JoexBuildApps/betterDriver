@@ -10,28 +10,39 @@
 - Export/import de datos
 - Sin anuncios · Sin suscripciones
 
-## v1.1 — Bugfixes + Companions
-- [ ] Fix GPS semáforo (failsafe siempre activo)
+## v1.1.1 — Bugfixes ✅
+- [x] Fix GPS semáforo (primera versión del failsafe)
+- [x] Fix overflow de estrellas/score en tarjeta de viaje
+- [x] Fix origenBarrio/destinoBarrio/tipoVehiculo no se guardaban en AsyncStorage
+
+## v1.2 — GPS + UX ✅
+- [x] GPS semáforo: velocidad derivada de posición (lat/lon) como verificación independiente del campo speed, que descarta el ruido/multipath cuando la posición confirma que el carro está detenido
+- [x] GPS: mediana de 4 lecturas en vez de promedio de 2 (más robusta contra picos aislados)
+- [x] GPS: intervalos de bajada de velocidad de 300ms a 200ms (baja 5 km/h por segundo)
+- [x] Origen/destino usa nombre de calle en vez de localidad/distrito
+- [x] Botones Modo Libre / Iniciar viaje visualmente parejos (mismo relleno y sombra)
+- [x] Ícono de Modo Libre cambiado de micrófono a brújula
+- [x] Fix de bug de remount que hacía que "Terminar viaje" necesitara 4-5 taps (`{BotonesViaje()}` en vez de `<BotonesViaje />`)
+- [x] Botones −5/+5 de ajuste de límite reactivados (funcionaban mal por el mismo bug de remount)
 - [ ] Voces de abuela colombiana (ElevenLabs)
 - [ ] Companions: abuela, monstruo, tortuga
 - [ ] Background mode (GPS con Waze activo)
-- [ ] Botones más responsivos
 
-## v2 — Multi-idioma Américas
-- [ ] Español neutro, inglés, portugués, francés
-- [ ] Mensajes regionalizados por país
-- [ ] Versión Brasil
+## v2.0 — Portugués + Social familiar (Brasil)
+- [ ] Portugués como segundo idioma (UI, voces, mensajes aleatorios)
+- [ ] Grupo cerrado por invitación (ej. padre + hijos comparten un carro) — comparte score/infracciones/segundos en exceso agregados, nunca GPS ni ruta — requiere Supabase
 
-## v3 — Mundial
+## v3.0 — Mundial
+- [ ] Inglés, francés y otros idiomas
 - [ ] Europa y Asia
 - [ ] CarPlay / Android Auto
-- [ ] Ranking social con Supabase
 - [ ] Mascota animada sobre velocímetro
 
 ## Notas técnicas
 - Stack: React Native + Expo SDK 56
 - GPS: expo-location (Fused Location)
-- Acelerómetro: expo-sensors
-- Storage: AsyncStorage (local, sin servidor)
+- Acelerómetro: expo-sensors (descartado como failsafe de velocidad — ruido de 0.90 a 1.1g en reposo en el dispositivo de prueba)
+- Storage: AsyncStorage (local, sin servidor) — cambia con v2.0 (Supabase para el grupo social)
 - Build: EAS local
 - Play Store: com.joebuildapps.betterDriver
+- Versionado: x.x = mismo modelo de datos/arquitectura (todo local, sin backend); x.0 = salto arquitectónico (introduce backend, nuevo mercado, etc.)

@@ -16,6 +16,7 @@ import { C } from '../../utils/colors';
 const VELOCIDAD_MINIMA = 8;
 const TIEMPO_NUEVO_VIAJE = 3 * 60 * 1000;
 const TOLERANCIA = 1.10;
+const RUIDO_GPS_KMH = 15; // lecturas GPS <= este umbral se tratan como ruido/detenido, no como movimiento real
 const LIMITES_OPCIONES = [48, 58, 68, 78];
 
 function Velocimetro({ velocidad, limite, size = 260, unidadLabel = 'km/h' }: { velocidad: number; limite: number; size?: number; unidadLabel?: string }) {
@@ -90,6 +91,7 @@ export default function Conducir() {
   const muestrasVelocidad = useRef(0);
   const distanciaM = useRef(0);
   const ultimaPos = useRef<{ lat: number; lon: number } | null>(null);
+  const ultimaPosVelocidad = useRef<{ lat: number; lon: number; timestamp: number } | null>(null);
   const historialVelocidad = useRef<number[]>([]);
   const timerDesaceleracion = useRef<any>(null);
   const timerSubida = useRef<any>(null);
@@ -201,7 +203,7 @@ export default function Conducir() {
       Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }).then(res => {
         if (res.length > 0) {
           const r = res[0];
-          origenRef.current = r.district || r.subregion || r.city || undefined;
+          origenRef.current = r.street || r.district || r.subregion || r.city || undefined;
         }
       }).catch(() => {});
     }).catch(() => {});
@@ -252,7 +254,7 @@ export default function Conducir() {
     try {
       const loc = await Location.getCurrentPositionAsync({});
       const res = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-      if (res.length > 0) { const r = res[0]; destinoBarrio = r.district || r.subregion || r.city || undefined; }
+      if (res.length > 0) { const r = res[0]; destinoBarrio = r.street || r.district || r.subregion || r.city || undefined; }
     } catch (e) {}
     const distanciaKm = Math.round(distanciaM.current / 100) / 10;
     const vActivo = await AsyncStorage.getItem('vehiculoActivo');
@@ -282,24 +284,52 @@ export default function Conducir() {
         (location) => {
           const { latitude, longitude, speed } = location.coords;
           const rawKmh = (speed ?? 0) * 3.6;
-          // Si GPS raw es 0 o casi 0, limpiar historial para no contaminar promedio
+          // Si GPS raw es 0 o casi 0, limpiar historial para no contaminar la mediana
           if (rawKmh < 2) historialVelocidad.current = [];
           historialVelocidad.current.push(rawKmh);
-          if (historialVelocidad.current.length > 2) historialVelocidad.current.shift();
-          const promRaw = historialVelocidad.current.reduce((a, b) => a + b, 0) / historialVelocidad.current.length;
-          const kmhReal = Math.round(promRaw);
+          if (historialVelocidad.current.length > 4) historialVelocidad.current.shift();
+          // Mediana en vez de promedio: más robusta contra picos aislados de ruido GPS (multipath en semáforos/edificios)
+          const ordenado = [...historialVelocidad.current].sort((a, b) => a - b);
+          const medianaRaw = ordenado[Math.floor(ordenado.length / 2)];
+          const kmhReal = Math.round(medianaRaw);
+
+          // Verificación independiente: velocidad derivada del desplazamiento real (lat/lon),
+          // que no sufre el multipath/rebote que contamina el campo "speed" del GPS cerca de edificios.
+          let velocidadPosicionKmh: number | null = null;
+          if (ultimaPosVelocidad.current) {
+            const dlatV = latitude - ultimaPosVelocidad.current.lat;
+            const dlonV = longitude - ultimaPosVelocidad.current.lon;
+            const distV = Math.sqrt(dlatV * dlatV + dlonV * dlonV) * 111000;
+            const dtSec = (Date.now() - ultimaPosVelocidad.current.timestamp) / 1000;
+            if (dtSec > 0.3) velocidadPosicionKmh = (distV / dtSec) * 3.6;
+          }
+          ultimaPosVelocidad.current = { lat: latitude, lon: longitude, timestamp: Date.now() };
+
+          // Si la posición confirma que no hubo desplazamiento real (<3 km/h), no confiar en el
+          // campo speed del GPS aunque reporte ruido (6, 13, etc. detenido en semáforo).
+          const kmhEfectivo = (velocidadPosicionKmh !== null && velocidadPosicionKmh < 3) ? 0 : kmhReal;
 
           AsyncStorage.setItem('debugGPS', JSON.stringify({ gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           if (modoDebug) {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
-          // Failsafe SIEMPRE activo - GPS solo puede SUBIR la velocidad
-          if (kmhReal > velocidadDisplay.current + 3) {
+          // Zona de ruido GPS (detenido en semáforo, tráfico parado): forzar bajada rápida a 0
+          // en vez de esperar a que el failsafe normal (que solo permite subir) decante solo.
+          if (kmhEfectivo <= RUIDO_GPS_KMH) {
+            if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
+            if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
+              timerDesaceleracion.current = setInterval(() => {
+                velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 3);
+                setVelocidad(velocidadDisplay.current);
+                if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
+              }, 200);
+            }
+          } else if (kmhEfectivo > velocidadDisplay.current + 3) {
             if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
             if (!timerSubida.current) {
               timerSubida.current = setInterval(() => {
-                if (velocidadDisplay.current >= kmhReal) { clearInterval(timerSubida.current); timerSubida.current = null; return; }
-                velocidadDisplay.current = Math.min(kmhReal, velocidadDisplay.current + 1);
+                if (velocidadDisplay.current >= kmhEfectivo) { clearInterval(timerSubida.current); timerSubida.current = null; return; }
+                velocidadDisplay.current = Math.min(kmhEfectivo, velocidadDisplay.current + 1);
                 setVelocidad(velocidadDisplay.current);
               }, 150);
             }
@@ -310,7 +340,7 @@ export default function Conducir() {
                 velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 1);
                 setVelocidad(velocidadDisplay.current);
                 if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
-              }, 300);
+              }, 200);
             }
           }
           const kmh = velocidadDisplay.current;
@@ -324,7 +354,7 @@ export default function Conducir() {
             ultimaPos.current = { lat: latitude, lon: longitude };
             totalVelocidades.current += kmh;
             muestrasVelocidad.current++;
-            if (kmhReal > topSpeed && kmhReal > 5) { setTopSpeed(kmhReal); flashearTop(); }
+            if (kmhEfectivo > topSpeed && kmhEfectivo > 5) { setTopSpeed(kmhEfectivo); flashearTop(); }
 
             const enExceso = kmh > limite * TOLERANCIA;
             const color = enExceso ? 'rojo' : kmh > limite ? 'amarillo' : 'verde';
@@ -405,7 +435,7 @@ export default function Conducir() {
     if (modoRoaming) {
       return (
         <TouchableOpacity style={styles.btnRoaming} onPress={detenerRoaming}>
-          <Text style={[styles.btnRoamingTexto, { color: C.marca }]}>🎙 Modo libre activo · Detener</Text>
+          <Text style={[styles.btnRoamingTexto, { color: C.marca }]}>🧭 Modo libre activo · Detener</Text>
         </TouchableOpacity>
       );
     }
@@ -433,7 +463,7 @@ export default function Conducir() {
           style={[styles.btnModoLibre]}
           onPress={() => { setEsRoaming(true); setMostrarSelectorModo(true); }}
         >
-          <Text style={styles.btnModoLibreTexto}>🎙 Modo libre</Text>
+          <Text style={styles.btnModoLibreTexto}>🧭 Modo libre</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.btnIniciar, { flex: 1 }]}
@@ -462,7 +492,7 @@ export default function Conducir() {
           <View style={styles.landscapeRight}>
             <HeaderStats />
             <Text style={[styles.estado, { color: getColorEstado(), marginVertical: 12 }]}>{getEstado()}</Text>
-            <BotonesViaje />
+            {BotonesViaje()}
             {mensaje !== '' && (
               <View style={[styles.mensajeContainer, { position: 'relative', bottom: 0, left: 0, right: 0, marginTop: 12 }]}>
                 <Text style={styles.mensajeTexto}>{mensaje}</Text>
@@ -484,7 +514,7 @@ export default function Conducir() {
               <Text style={styles.mensajeTexto}>{mensaje}</Text>
             </View>
           )}
-          <BotonesViaje />
+          {BotonesViaje()}
 
           {perfil && <Text style={styles.perfilTexto}>{perfil.nombre} · {perfil.ciudad}</Text>}
 
@@ -500,7 +530,7 @@ export default function Conducir() {
                 <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
                   <TouchableOpacity style={[styles.modoBtnCompacto, { height: 64, alignItems: 'center', justifyContent: 'center' }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]} onPress={() => setEsRoaming(true)}>
-                    <Text style={styles.modoBtnIcon}>🎙</Text>
+                    <Text style={styles.modoBtnIcon}>🧭</Text>
                     <Text style={[styles.modoBtnTituloCompacto, esRoaming && { color: C.marca }]}>Modo libre</Text>
                     <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
                   </TouchableOpacity>
@@ -555,7 +585,7 @@ export default function Conducir() {
                 <Text style={styles.modalTitulo}>¿Cómo vas hoy?</Text>
                 <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
                   <TouchableOpacity style={[styles.modoBtnCompacto, { height: Math.min(height * 0.15, 120) }, esRoaming && { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.1)' }]} onPress={() => setEsRoaming(true)}>
-                    <Text style={styles.modoBtnIcon}>🎙</Text>
+                    <Text style={styles.modoBtnIcon}>🧭</Text>
                     <Text style={[styles.modoBtnTituloCompacto, esRoaming && { color: C.marca }]}>Modo libre</Text>
                     <Text style={styles.modoBtnSubCompacto}>Sin registros</Text>
                   </TouchableOpacity>
@@ -737,7 +767,20 @@ const styles = StyleSheet.create({
   debugValor: { color: '#F4F8FC', fontWeight: '600' },
   btnAjuste: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider, backgroundColor: C.superficie },
   btnAjusteTexto: { color: C.marca, fontSize: 16, fontWeight: '600' },
-  btnModoLibre: { flex: 1, paddingVertical: 14, borderRadius: 32, borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', alignItems: 'center' },
+  btnModoLibre: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(46,230,197,0.4)',
+    backgroundColor: 'rgba(46,230,197,0.12)',
+    alignItems: 'center',
+    shadowColor: C.marca,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   btnModoLibreTexto: { color: C.marca, fontSize: 15, fontWeight: '500' },
   btnRoaming: { marginTop: 10, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.divider },
   btnRoamingActivo: { borderColor: C.marca },
