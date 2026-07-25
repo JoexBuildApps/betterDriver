@@ -37,18 +37,18 @@ export function calcularResumen(
 
 export function calcularEstrellas(duracionSegundos: number, segundosEnExceso: number): number {
   if (duracionSegundos === 0) return 3;
+  if (segundosEnExceso === 0) return 5;
   const porcentaje = (segundosEnExceso / duracionSegundos) * 100;
-  if (porcentaje <= 5) return 5;
-  if (porcentaje <= 15) return 4;
-  if (porcentaje <= 30) return 3;
-  if (porcentaje <= 50) return 2;
+  if (porcentaje <= 5) return 4;
+  if (porcentaje <= 15) return 3;
+  if (porcentaje <= 35) return 2;
   return 1;
 }
 
 export function calcularScore(estrellas: number): string {
-  if (estrellas === 5) return 'Lento pero seguro';
-  if (estrellas === 4) return 'Esto es lo que se espera de ti';
-  if (estrellas === 3) return 'En construccion';
-  if (estrellas === 2) return 'Te regalaron el pase';
-  return 'Deberias ir en bus';
+  if (estrellas === 5) return 'Así se hace. Cero infracciones.';
+  if (estrellas === 4) return 'Casi perfecto. Pocos momentos fuera del límite.';
+  if (estrellas === 3) return 'En construcción. Vas por buen camino.';
+  if (estrellas === 2) return 'Te regalaron el pase.';
+  return 'Deberías ir en bus.';
 }

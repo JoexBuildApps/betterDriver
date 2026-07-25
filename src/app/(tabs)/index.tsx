@@ -76,6 +76,7 @@ export default function Conducir() {
   const [modoManual, setModoManual] = useState(false);
   const [limiteManual, setLimiteManual] = useState('');
   const [unidad, setUnidad] = useState<'kmh' | 'mph'>('kmh');
+  const [ultimoViaje, setUltimoViaje] = useState<any>(null);
   const [modoRoaming, setModoRoaming] = useState(false);
 
   const [mostrarSelectorModo, setMostrarSelectorModo] = useState(false);
@@ -117,6 +118,12 @@ export default function Conducir() {
     });
     AsyncStorage.getItem('vehiculos').then(v => { if (v) setVehiculos(JSON.parse(v)); });
     AsyncStorage.getItem('vehiculoActivo').then(v => { if (v) setVehiculoSeleccionado(JSON.parse(v)); });
+    AsyncStorage.getItem('viajes').then(v => {
+      if (v) {
+        const lista = JSON.parse(v);
+        if (lista.length > 0) setUltimoViaje(lista[0]);
+      }
+    });
     AsyncStorage.getItem('ultimoModo').then(m => { if (m === 'roaming') setEsRoaming(true); else setEsRoaming(false); });
 
     setMostrarSelectorModo(true);
@@ -590,6 +597,14 @@ export default function Conducir() {
                 <TouchableOpacity style={[styles.btnEmpezar, { backgroundColor: esRoaming ? C.marca : C.verde }]} onPress={() => { const l = modoManual ? parseInt(limiteManual) || limiteTemp : limiteTemp; if (esRoaming) { iniciarRoaming(l); } else { confirmarLimite(l); } }} disabled={modoManual && !limiteManual}>
                   <Text style={styles.btnEmpezarTexto}>Empezar →</Text>
                 </TouchableOpacity>
+                {ultimoViaje && (
+                  <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: C.divider, alignItems: 'center' }}>
+                    <Text style={{ color: C.gris, fontSize: 11, marginBottom: 4 }}>Último viaje</Text>
+                    <Text style={{ color: C.blanco, fontSize: 13 }}>
+                      {Array.from({length: 5}, (_, i) => i < (ultimoViaje.estrellas || 3) ? '★' : '☆').join('')} · {ultimoViaje.puntosFinales} pts · {ultimoViaje.distanciaKm || 0} km
+                    </Text>
+                  </View>
+                )}
               </View>
             </ScrollView>
           )}
