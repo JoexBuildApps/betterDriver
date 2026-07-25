@@ -287,14 +287,14 @@ export default function Conducir() {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
           // Failsafe SIEMPRE activo - GPS solo puede SUBIR la velocidad
-          if (kmhReal > velocidadDisplay.current) {
+          if (kmhReal > velocidadDisplay.current + 3) {
             if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
             if (!timerSubida.current) {
               timerSubida.current = setInterval(() => {
                 if (velocidadDisplay.current >= kmhReal) { clearInterval(timerSubida.current); timerSubida.current = null; return; }
                 velocidadDisplay.current = Math.min(kmhReal, velocidadDisplay.current + 1);
                 setVelocidad(velocidadDisplay.current);
-              }, 80);
+              }, 150);
             }
           } else {
             if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
@@ -406,15 +406,15 @@ export default function Conducir() {
       return (
         <View style={{ alignItems: 'center', gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity style={styles.btnAjuste} onPress={() => { const n = Math.max(20, limite - 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
+            <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.max(20, limite - 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
               <Text style={styles.btnAjusteTexto}>−5</Text>
             </TouchableOpacity>
             <Text style={{ color: C.gris, fontSize: 13 }}>límite: <Text style={{ color: C.blanco, fontWeight: '600' }}>{limite}</Text></Text>
-            <TouchableOpacity style={styles.btnAjuste} onPress={() => { const n = Math.min(120, limite + 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
+            <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.min(120, limite + 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
               <Text style={styles.btnAjusteTexto}>+5</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje}>
+          <TouchableOpacity style={styles.btnTerminar} onPress={terminarViaje} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
             <Text style={styles.btnTerminarTexto}>Terminar viaje</Text>
           </TouchableOpacity>
         </View>
