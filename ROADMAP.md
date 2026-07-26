@@ -16,14 +16,15 @@
 - [x] Fix origenBarrio/destinoBarrio/tipoVehiculo no se guardaban en AsyncStorage
 
 ## v1.2 — GPS + UX ✅
-- [x] GPS semáforo: velocidad derivada de posición (lat/lon) como verificación independiente del campo speed, que descarta el ruido/multipath cuando la posición confirma que el carro está detenido
-- [x] GPS: mediana de 4 lecturas en vez de promedio de 2 (más robusta contra picos aislados)
+- [x] GPS semáforo: velocidad derivada de posición (lat/lon) como verificación tick-a-tick
+- [x] GPS semáforo: verificación adicional de ventana larga (4s) para rachas de ruido que disparan el distanceInterval
+- [x] GPS: mediana de 4 lecturas en vez de promedio de 2
 - [x] GPS: intervalos de bajada de velocidad de 300ms a 200ms (baja 5 km/h por segundo)
 - [x] Origen/destino usa nombre de calle en vez de localidad/distrito
-- [x] Botones Modo Libre / Iniciar viaje visualmente parejos (mismo relleno y sombra)
-- [x] Ícono de Modo Libre cambiado de micrófono a brújula
-- [x] Fix de bug de remount que hacía que "Terminar viaje" necesitara 4-5 taps (`{BotonesViaje()}` en vez de `<BotonesViaje />`)
-- [x] Botones −5/+5 de ajuste de límite reactivados (funcionaban mal por el mismo bug de remount)
+- [x] Botones Modo Libre / Iniciar viaje visualmente parejos + ícono cambiado de micrófono a brújula
+- [x] Fix botón "Iniciar viaje" sin texto visible (padding excesivo + overflow hidden lo recortaba)
+- [x] Fix de bug de remount que hacía que "Terminar viaje" necesitara 4-5 taps
+- [x] Botones −5/+5 de ajuste de límite reactivados y confirmados en carretera
 - [ ] Voces de abuela colombiana (ElevenLabs)
 - [ ] Companions: abuela, monstruo, tortuga
 - [ ] Background mode (GPS con Waze activo)

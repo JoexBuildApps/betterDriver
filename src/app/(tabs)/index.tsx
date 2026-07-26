@@ -17,6 +17,7 @@ const VELOCIDAD_MINIMA = 8;
 const TIEMPO_NUEVO_VIAJE = 3 * 60 * 1000;
 const TOLERANCIA = 1.10;
 const RUIDO_GPS_KMH = 15; // lecturas GPS <= este umbral se tratan como ruido/detenido, no como movimiento real
+const VENTANA_ANCLA_MS = 4000; // ventana larga para promediar desplazamiento y filtrar ruido puntual del GPS
 const LIMITES_OPCIONES = [48, 58, 68, 78];
 
 function Velocimetro({ velocidad, limite, size = 260, unidadLabel = 'km/h' }: { velocidad: number; limite: number; size?: number; unidadLabel?: string }) {
@@ -92,6 +93,7 @@ export default function Conducir() {
   const distanciaM = useRef(0);
   const ultimaPos = useRef<{ lat: number; lon: number } | null>(null);
   const ultimaPosVelocidad = useRef<{ lat: number; lon: number; timestamp: number } | null>(null);
+  const anclaPosVentana = useRef<{ lat: number; lon: number; timestamp: number } | null>(null);
   const historialVelocidad = useRef<number[]>([]);
   const timerDesaceleracion = useRef<any>(null);
   const timerSubida = useRef<any>(null);
@@ -235,6 +237,7 @@ export default function Conducir() {
     muestrasVelocidad.current = 0;
     distanciaM.current = 0;
     ultimaPos.current = null;
+    anclaPosVentana.current = null;
     historialVelocidad.current = [];
     eventosViaje.current = [];
     rutaViaje.current = [];
@@ -305,9 +308,30 @@ export default function Conducir() {
           }
           ultimaPosVelocidad.current = { lat: latitude, lon: longitude, timestamp: Date.now() };
 
-          // Si la posición confirma que no hubo desplazamiento real (<3 km/h), no confiar en el
-          // campo speed del GPS aunque reporte ruido (6, 13, etc. detenido en semáforo).
-          const kmhEfectivo = (velocidadPosicionKmh !== null && velocidadPosicionKmh < 3) ? 0 : kmhReal;
+          // Verificación de ventana larga (4s): el ruido GPS que dispara distanceInterval (5m)
+          // suele ser un vaivén que se cancela en ventanas más largas; un movimiento real se aleja
+          // consistentemente. Esto atrapa casos donde el chequeo tick-a-tick no alcanza a filtrar
+          // (ej. una racha de ruido que por sí sola ya supera los 5m del distanceInterval).
+          let velocidadVentanaKmh: number | null = null;
+          if (anclaPosVentana.current) {
+            const dtAncla = (Date.now() - anclaPosVentana.current.timestamp) / 1000;
+            if (dtAncla >= VENTANA_ANCLA_MS / 1000) {
+              const dlatA = latitude - anclaPosVentana.current.lat;
+              const dlonA = longitude - anclaPosVentana.current.lon;
+              const distA = Math.sqrt(dlatA * dlatA + dlonA * dlonA) * 111000;
+              velocidadVentanaKmh = (distA / dtAncla) * 3.6;
+              anclaPosVentana.current = { lat: latitude, lon: longitude, timestamp: Date.now() };
+            }
+          } else {
+            anclaPosVentana.current = { lat: latitude, lon: longitude, timestamp: Date.now() };
+          }
+
+          // Si cualquiera de las dos verificaciones (tick a tick o ventana larga) confirma que no
+          // hubo desplazamiento real, no confiar en el campo speed del GPS.
+          const kmhEfectivo = (
+            (velocidadPosicionKmh !== null && velocidadPosicionKmh < 3) ||
+            (velocidadVentanaKmh !== null && velocidadVentanaKmh < 3)
+          ) ? 0 : kmhReal;
 
           AsyncStorage.setItem('debugGPS', JSON.stringify({ gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           if (modoDebug) {
@@ -735,10 +759,11 @@ const styles = StyleSheet.create({
   mensajeTexto: { color: C.blanco, fontSize: 13, lineHeight: 20 },
   btnIniciar: {
     marginTop: 20,
-    paddingHorizontal: 40,
+    paddingHorizontal: 12,
     paddingVertical: 14,
     borderRadius: 32,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: C.verde,
     shadowColor: C.verde,
     shadowOffset: { width: 0, height: 4 },
