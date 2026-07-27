@@ -25,6 +25,7 @@
 - [x] Fix botón "Iniciar viaje" sin texto visible (padding excesivo + overflow hidden lo recortaba)
 - [x] Fix de bug de remount que hacía que "Terminar viaje" necesitara 4-5 taps
 - [x] Botones −5/+5 de ajuste de límite reactivados y confirmados en carretera
+- [x] Fix zigzag de velocidad en crucero constante (temporizador de bajada sin meta) — nuevo state machine con objetivo dinámico
 - [ ] Voces de abuela colombiana (ElevenLabs)
 - [ ] Companions: abuela, monstruo, tortuga
 - [ ] Background mode (GPS con Waze activo)

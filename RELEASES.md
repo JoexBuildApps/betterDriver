@@ -1,5 +1,12 @@
 # betterDriver — Release Notes
 
+## v1.2.3 — Fix zigzag de velocidad en crucero constante
+
+### Bugfixes
+- Velocímetro: el temporizador de bajada no tenía meta — solo se detenía al llegar a 0 o si una lectura GPS lo interrumpía. En velocidad constante (ej. 44 km/h con crucero activado) esto causaba que bajara sin parar entre lecturas GPS (~1seg) y tuviera que "rescatarse" de vuelta cada vez, generando zigzag visible (44, 45, 43, 42, 41...).
+- Refactor: nuevo ref `objetivoVelocidad` que se actualiza en cada lectura GPS con el valor más reciente (0 si está detenido confirmado, o la velocidad real filtrada en caso contrario). Los temporizadores de subida/bajada ahora leen este objetivo en cada tick propio y se detienen exactamente ahí, en vez de siempre correr hacia 0 o quedar peleando consigo mismos en velocidad estable.
+- El comportamiento del failsafe en semáforos no cambia (mismo umbral de ruido, misma verificación por posición/ventana larga, mismo paso de bajada rápida de 5km/h/seg) — solo cambia que ahora converge y se queda en el valor correcto en vez de sobrepasarlo.
+
 ## v1.2.2 — Fixes GPS ventana larga + UI botón Iniciar viaje
 
 ### Bugfixes

@@ -99,6 +99,7 @@ export default function Conducir() {
   const timerSubida = useRef<any>(null);
   const segundosBajoVelocidad = useRef(0);
   const velocidadDisplay = useRef(0);
+  const objetivoVelocidad = useRef(0);
   const accelMagnitud = useRef(0);
   const quietoAcelerometro = useRef(false);
 
@@ -223,6 +224,9 @@ export default function Conducir() {
     setModoRoaming(false);
     setVelocidad(0);
     velocidadDisplay.current = 0;
+    objetivoVelocidad.current = 0;
+    if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
+    if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
   };
 
   const confirmarManual = () => {
@@ -337,35 +341,36 @@ export default function Conducir() {
           if (modoDebug) {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
-          // Zona de ruido GPS (detenido en semáforo, tráfico parado): forzar bajada rápida a 0
-          // en vez de esperar a que el failsafe normal (que solo permite subir) decante solo.
-          if (kmhEfectivo <= RUIDO_GPS_KMH) {
-            if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
-            if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
-              timerDesaceleracion.current = setInterval(() => {
-                velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 3);
-                setVelocidad(velocidadDisplay.current);
-                if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
-              }, 200);
-            }
-          } else if (kmhEfectivo > velocidadDisplay.current + 3) {
+          // Objetivo de velocidad a mostrar: 0 si estamos en zona de ruido/detenido confirmado,
+          // o la velocidad real filtrada en caso contrario. Se guarda en un ref para que los
+          // intervalos de abajo siempre lean el valor más reciente en cada "tick" propio, no uno
+          // capturado (y por lo tanto desactualizado) del momento en que arrancó el intervalo.
+          objetivoVelocidad.current = kmhEfectivo <= RUIDO_GPS_KMH ? 0 : kmhEfectivo;
+
+          if (velocidadDisplay.current < objetivoVelocidad.current) {
             if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
             if (!timerSubida.current) {
               timerSubida.current = setInterval(() => {
-                if (velocidadDisplay.current >= kmhEfectivo) { clearInterval(timerSubida.current); timerSubida.current = null; return; }
-                velocidadDisplay.current = Math.min(kmhEfectivo, velocidadDisplay.current + 1);
+                if (velocidadDisplay.current >= objetivoVelocidad.current) { clearInterval(timerSubida.current); timerSubida.current = null; return; }
+                velocidadDisplay.current = Math.min(objetivoVelocidad.current, velocidadDisplay.current + 1);
                 setVelocidad(velocidadDisplay.current);
               }, 150);
             }
-          } else {
+          } else if (velocidadDisplay.current > objetivoVelocidad.current) {
             if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
-            if (!timerDesaceleracion.current && velocidadDisplay.current > 0) {
+            if (!timerDesaceleracion.current) {
               timerDesaceleracion.current = setInterval(() => {
-                velocidadDisplay.current = Math.max(0, velocidadDisplay.current - 1);
+                if (velocidadDisplay.current <= objetivoVelocidad.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; return; }
+                // Bajada rápida (5/seg) cuando el objetivo es 0 (detenido confirmado); suave en otro caso
+                const paso = objetivoVelocidad.current === 0 ? 3 : 1;
+                velocidadDisplay.current = Math.max(objetivoVelocidad.current, velocidadDisplay.current - paso);
                 setVelocidad(velocidadDisplay.current);
-                if (velocidadDisplay.current <= 0) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
               }, 200);
             }
+          } else {
+            // Ya estamos en el objetivo: no dejar temporizadores corriendo que lo alejen de un valor estable
+            if (timerSubida.current) { clearInterval(timerSubida.current); timerSubida.current = null; }
+            if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
           }
           const kmh = velocidadDisplay.current;
 
