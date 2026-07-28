@@ -20,6 +20,7 @@ const VENTANA_TRANCON_MS = 25 * 60 * 1000; // ventana en la que contamos ciclos 
 const UMBRAL_CICLOS_TRANCON = 3; // # de ciclos parar-arrancar en la ventana para considerar que es trancón
 const TOLERANCIA = 1.10;
 const RUIDO_GPS_KMH = 15; // lecturas GPS <= este umbral se tratan como ruido/detenido, no como movimiento real
+const SESGO_SEGURIDAD_KMH = 2; // el GPS suele leer un poco por debajo de la velocidad real; mejor mostrar de más que de menos
 const VENTANA_ANCLA_MS = 4000; // ventana larga para promediar desplazamiento y filtrar ruido puntual del GPS
 const LIMITES_OPCIONES = [48, 58, 68, 78];
 
@@ -107,6 +108,7 @@ export default function Conducir() {
   const quietoAcelerometro = useRef(false);
 
   const flashAnim = useRef(new Animated.Value(1)).current;
+  const limitePulse = useRef(new Animated.Value(1)).current;
   const alertaActiva = useRef(false);
   const timerParado = useRef<any>(null);
   const ciclosParada = useRef<number[]>([]);
@@ -156,6 +158,14 @@ export default function Conducir() {
     });
     return () => accelSub.remove();
   }, [viajeActivo, modoRoaming]);
+
+  // Pulso visual en el badge de límite cada vez que cambia (confirma que sí se actualizó)
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(limitePulse, { toValue: 1.25, duration: 120, useNativeDriver: true }),
+      Animated.timing(limitePulse, { toValue: 1, duration: 150, useNativeDriver: true }),
+    ]).start();
+  }, [limite]);
 
   const flashearTop = () => {
     setAlertaTop(true);
@@ -350,10 +360,10 @@ export default function Conducir() {
             setDebugInfo(prev => ({ ...prev, gpsRaw: Math.round(rawKmh), gpsProm: kmhReal, segundosBajo: segundosBajoVelocidad.current }));
           }
           // Objetivo de velocidad a mostrar: 0 si estamos en zona de ruido/detenido confirmado,
-          // o la velocidad real filtrada en caso contrario. Se guarda en un ref para que los
-          // intervalos de abajo siempre lean el valor más reciente en cada "tick" propio, no uno
-          // capturado (y por lo tanto desactualizado) del momento en que arrancó el intervalo.
-          objetivoVelocidad.current = kmhEfectivo <= RUIDO_GPS_KMH ? 0 : kmhEfectivo;
+          // o la velocidad real filtrada + sesgo de seguridad en caso contrario. Se guarda en un ref
+          // para que los intervalos de abajo siempre lean el valor más reciente en cada "tick" propio,
+          // no uno capturado (y por lo tanto desactualizado) del momento en que arrancó el intervalo.
+          objetivoVelocidad.current = kmhEfectivo <= RUIDO_GPS_KMH ? 0 : kmhEfectivo + SESGO_SEGURIDAD_KMH;
 
           if (velocidadDisplay.current < objetivoVelocidad.current) {
             if (timerDesaceleracion.current) { clearInterval(timerDesaceleracion.current); timerDesaceleracion.current = null; }
@@ -400,7 +410,7 @@ export default function Conducir() {
             ultimaPos.current = { lat: latitude, lon: longitude };
             totalVelocidades.current += kmh;
             muestrasVelocidad.current++;
-            if (kmhEfectivo > topSpeed && kmhEfectivo > 5) { setTopSpeed(kmhEfectivo); flashearTop(); }
+            if (kmhEfectivo + SESGO_SEGURIDAD_KMH > topSpeed && kmhEfectivo > 5) { setTopSpeed(kmhEfectivo + SESGO_SEGURIDAD_KMH); flashearTop(); }
 
             const enExceso = kmh > limite * TOLERANCIA;
             const color = enExceso ? 'rojo' : kmh > limite ? 'amarillo' : 'verde';
@@ -468,12 +478,15 @@ export default function Conducir() {
 
   const HeaderStats = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 8 }}>
-      <View>
-        <Text style={styles.headerLabel}>puntos</Text>
-        <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntosActuales}</Text>
-        <Text style={[styles.headerSubValor, eventosViaje.current.length > 0 && { color: C.rojo }]}>
-          {eventosViaje.current.length} infracc.
-        </Text>
+      <View style={{ flexDirection: 'row', gap: 20 }}>
+        <View>
+          <Text style={styles.headerLabel}>puntos</Text>
+          <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntosActuales}</Text>
+        </View>
+        <View>
+          <Text style={styles.headerLabel}>infracc.</Text>
+          <Text style={[styles.headerValor, eventosViaje.current.length > 0 && { color: C.rojo }]}>{eventosViaje.current.length}</Text>
+        </View>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <Text style={[styles.headerLabel, alertaTop && { color: C.rojo }]}>{alertaTop ? '⚠ alerta' : 'top speed'}</Text>
@@ -481,6 +494,15 @@ export default function Conducir() {
           {kmhToDisplay(topSpeed)} {unidadLabel}
         </Animated.Text>
       </View>
+    </View>
+  );
+
+  const LimiteBadge = () => (
+    <View style={styles.limiteRow}>
+      <Animated.View style={[styles.limiteBadge, { transform: [{ scale: limitePulse }] }]}>
+        <Text style={styles.limiteBadgeTexto}>{limite}</Text>
+      </Animated.View>
+      <Text style={styles.limiteLabel}>límite de zona</Text>
     </View>
   );
 
@@ -547,10 +569,7 @@ export default function Conducir() {
         <View style={styles.landscapeContainer}>
           <View style={styles.landscapeLeft}>
             <Velocimetro velocidad={kmhToDisplay(velocidad)} limite={limite} size={velocimetroSize} unidadLabel={unidadLabel} />
-            <View style={styles.limiteRow}>
-              <View style={styles.limiteBadge}><Text style={styles.limiteBadgeTexto}>{limite}</Text></View>
-              <Text style={styles.limiteLabel}>límite</Text>
-            </View>
+            {LimiteBadge()}
           </View>
           <View style={styles.divisor} />
           <View style={styles.landscapeRight}>
@@ -568,10 +587,7 @@ export default function Conducir() {
         <ScrollView contentContainerStyle={styles.portraitContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.portraitHeader}><HeaderStats /></View>
           <Velocimetro velocidad={kmhToDisplay(velocidad)} limite={limite} size={velocimetroSize} unidadLabel={unidadLabel} />
-          <View style={styles.limiteRow}>
-            <View style={styles.limiteBadge}><Text style={styles.limiteBadgeTexto}>{limite}</Text></View>
-            <Text style={styles.limiteLabel}>límite de zona</Text>
-          </View>
+          {LimiteBadge()}
           <Text style={[styles.estado, { color: getColorEstado() }]}>{getEstado()}</Text>
           {mensaje !== '' && (
             <View style={styles.mensajeContainer}>

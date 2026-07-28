@@ -1,5 +1,15 @@
 # betterDriver — Release Notes
 
+## v1.2.5 — Consistencia visual + sesgo de seguridad en velocidad
+
+### Nuevas funciones
+- Sesgo de seguridad de +2 km/h en la velocidad mostrada: el GPS suele leer levemente por debajo de la velocidad real, y en un velocímetro es más seguro mostrar de más que de menos. Se aplica tanto a la velocidad en vivo como al top speed (nunca al forzar 0 en semáforo).
+- Badge de "límite de zona" con animación de pulso cada vez que cambia (con ±5, o al iniciar un viaje) — confirmación visual clara de que se actualizó.
+
+### UI
+- Contador de infracciones ahora usa el mismo estilo (título uppercase pequeño + número grande) que "puntos", en vez de una línea de texto combinada más chica.
+- Unificado el texto "límite" (landscape) y "límite de zona" (portrait) en un solo componente `LimiteBadge`, mismo texto en ambos layouts.
+
 ## v1.2.4 — Detección de trancón + Modo libre parejo con modo viaje
 
 ### Nuevas funciones

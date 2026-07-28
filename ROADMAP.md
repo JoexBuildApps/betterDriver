@@ -28,6 +28,8 @@
 - [x] Fix zigzag de velocidad en crucero constante (temporizador de bajada sin meta) — nuevo state machine con objetivo dinámico
 - [x] Botones −5/+5 en Modo libre + contador de infracciones visible en HeaderStats (portrait y landscape) + fix de reset faltante al iniciar Modo libre
 - [x] Detección de trancón: timeout de cierre automático extendido a 15 min si se detectan 3+ ciclos de parar-arrancar en 25 min
+- [x] Sesgo de seguridad +2 km/h en velocidad mostrada (GPS suele leer por debajo de la real)
+- [x] Contador de infracciones con mismo estilo que puntos + badge de límite con pulso animado + unificado texto "límite de zona" en portrait y landscape
 - [ ] Voces de abuela colombiana (ElevenLabs)
 - [ ] Companions: abuela, monstruo, tortuga
 - [ ] Background mode (GPS con Waze activo)
