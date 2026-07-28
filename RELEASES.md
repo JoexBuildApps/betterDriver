@@ -1,5 +1,11 @@
 # betterDriver — Release Notes
 
+## v1.2.6 — Círculo de límite unificado con los controles −5/+5
+
+### UI
+- Eliminada la duplicación del número de límite: antes se veía dos veces (círculo grande arriba del velocímetro + texto "límite: 53" entre los botones −5/+5). Ahora el círculo grande solo se muestra en la pantalla inicial (antes de arrancar); una vez hay viaje activo o Modo libre, se oculta y el número aparece en su lugar como un círculo (con la misma animación de pulso) justo en el centro de los botones −5 y +5.
+- Aplica igual en portrait y landscape.
+
 ## v1.2.5 — Consistencia visual + sesgo de seguridad en velocidad
 
 ### Nuevas funciones

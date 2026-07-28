@@ -497,24 +497,29 @@ export default function Conducir() {
     </View>
   );
 
-  const LimiteBadge = () => (
-    <View style={styles.limiteRow}>
-      <Animated.View style={[styles.limiteBadge, { transform: [{ scale: limitePulse }] }]}>
-        <Text style={styles.limiteBadgeTexto}>{limite}</Text>
-      </Animated.View>
-      <Text style={styles.limiteLabel}>límite de zona</Text>
-    </View>
-  );
+  const LimiteBadge = () => {
+    if (viajeActivo || modoRoaming) return null;
+    return (
+      <View style={styles.limiteRow}>
+        <Animated.View style={[styles.limiteBadge, { transform: [{ scale: limitePulse }] }]}>
+          <Text style={styles.limiteBadgeTexto}>{limite}</Text>
+        </Animated.View>
+        <Text style={styles.limiteLabel}>límite de zona</Text>
+      </View>
+    );
+  };
 
   const BotonesViaje = () => {
     if (modoRoaming) {
       return (
         <View style={{ alignItems: 'center', gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.max(20, limite - 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
               <Text style={styles.btnAjusteTexto}>−5</Text>
             </TouchableOpacity>
-            <Text style={{ color: C.gris, fontSize: 13 }}>límite: <Text style={{ color: C.blanco, fontWeight: '600' }}>{limite}</Text></Text>
+            <Animated.View style={[styles.limiteCentro, { transform: [{ scale: limitePulse }] }]}>
+              <Text style={styles.limiteCentroTexto}>{limite}</Text>
+            </Animated.View>
             <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.min(120, limite + 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
               <Text style={styles.btnAjusteTexto}>+5</Text>
             </TouchableOpacity>
@@ -528,11 +533,13 @@ export default function Conducir() {
     if (viajeActivo) {
       return (
         <View style={{ alignItems: 'center', gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.max(20, limite - 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
               <Text style={styles.btnAjusteTexto}>−5</Text>
             </TouchableOpacity>
-            <Text style={{ color: C.gris, fontSize: 13 }}>límite: <Text style={{ color: C.blanco, fontWeight: '600' }}>{limite}</Text></Text>
+            <Animated.View style={[styles.limiteCentro, { transform: [{ scale: limitePulse }] }]}>
+              <Text style={styles.limiteCentroTexto}>{limite}</Text>
+            </Animated.View>
             <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.min(120, limite + 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
               <Text style={styles.btnAjusteTexto}>+5</Text>
             </TouchableOpacity>
@@ -810,6 +817,8 @@ const styles = StyleSheet.create({
   limiteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
   limiteBadge: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.blanco, alignItems: 'center', justifyContent: 'center' },
   limiteBadgeTexto: { color: C.blanco, fontSize: 16, fontWeight: '600' },
+  limiteCentro: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: C.blanco, alignItems: 'center', justifyContent: 'center' },
+  limiteCentroTexto: { color: C.blanco, fontSize: 20, fontWeight: '700' },
   limiteLabel: { color: C.gris, fontSize: 14 },
   estado: { fontSize: 13, marginTop: 10, letterSpacing: 1, textTransform: 'uppercase' },
   mensajeContainer: { position: 'absolute', top: 90, left: 16, right: 16, backgroundColor: C.superficie, borderRadius: 16, padding: 14, borderLeftWidth: 3, borderLeftColor: C.marca, zIndex: 100 },
