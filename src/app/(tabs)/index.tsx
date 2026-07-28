@@ -15,6 +15,9 @@ import { C } from '../../utils/colors';
 
 const VELOCIDAD_MINIMA = 8;
 const TIEMPO_NUEVO_VIAJE = 3 * 60 * 1000;
+const TIEMPO_NUEVO_VIAJE_TRANCON = 15 * 60 * 1000; // timeout extendido si detectamos patrón de trancón
+const VENTANA_TRANCON_MS = 25 * 60 * 1000; // ventana en la que contamos ciclos de parada recientes
+const UMBRAL_CICLOS_TRANCON = 3; // # de ciclos parar-arrancar en la ventana para considerar que es trancón
 const TOLERANCIA = 1.10;
 const RUIDO_GPS_KMH = 15; // lecturas GPS <= este umbral se tratan como ruido/detenido, no como movimiento real
 const VENTANA_ANCLA_MS = 4000; // ventana larga para promediar desplazamiento y filtrar ruido puntual del GPS
@@ -106,6 +109,8 @@ export default function Conducir() {
   const flashAnim = useRef(new Animated.Value(1)).current;
   const alertaActiva = useRef(false);
   const timerParado = useRef<any>(null);
+  const ciclosParada = useRef<number[]>([]);
+  const ultimoKmhPositivo = useRef(false);
   const timerCountdown = useRef<any>(null);
   const timerMensajeAleatorio = useRef<any>(null);
   const inicioViaje = useRef<number>(Date.now());
@@ -215,6 +220,7 @@ export default function Conducir() {
   const iniciarRoaming = (l: number) => {
     setLimite(l);
     AsyncStorage.setItem('ultimoModo', 'roaming');
+    resetearViaje();
     setModoRoaming(true);
     setMostrarSelectorModo(false);
     setMostrarLimite(false);
@@ -245,6 +251,8 @@ export default function Conducir() {
     historialVelocidad.current = [];
     eventosViaje.current = [];
     rutaViaje.current = [];
+    ciclosParada.current = [];
+    ultimoKmhPositivo.current = false;
     setTopSpeed(0);
     inicioViaje.current = Date.now();
   };
@@ -374,6 +382,15 @@ export default function Conducir() {
           }
           const kmh = velocidadDisplay.current;
 
+          // Detección de trancón: cada vez que pasamos de movimiento a detenido, registramos el
+          // momento. Si hay varios de estos ciclos en una ventana reciente, es tráfico pesado
+          // (parar-arrancar-parar), no que llegaste a destino — así que el cierre automático
+          // del viaje debe esperar más tiempo antes de asumir que terminaste.
+          if (kmh === 0 && ultimoKmhPositivo.current) {
+            ciclosParada.current.push(Date.now());
+          }
+          ultimoKmhPositivo.current = kmh > 0;
+
           if (kmh > 0 && (viajeActivo || modoRoaming)) {
             if (ultimaPos.current) {
               const dlat = latitude - ultimaPos.current.lat;
@@ -414,7 +431,11 @@ export default function Conducir() {
             if (timerParado.current) { clearTimeout(timerParado.current); timerParado.current = null; }
           } else if (kmh === 0 && viajeActivo) {
             if (!timerParado.current) {
-              timerParado.current = setTimeout(() => { terminarViaje(); timerParado.current = null; }, TIEMPO_NUEVO_VIAJE);
+              const ahora = Date.now();
+              ciclosParada.current = ciclosParada.current.filter(t => ahora - t < VENTANA_TRANCON_MS);
+              const enTrancon = ciclosParada.current.length >= UMBRAL_CICLOS_TRANCON;
+              const timeout = enTrancon ? TIEMPO_NUEVO_VIAJE_TRANCON : TIEMPO_NUEVO_VIAJE;
+              timerParado.current = setTimeout(() => { terminarViaje(); timerParado.current = null; }, timeout);
             }
           }
         }
@@ -450,6 +471,9 @@ export default function Conducir() {
       <View>
         <Text style={styles.headerLabel}>puntos</Text>
         <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntosActuales}</Text>
+        <Text style={[styles.headerSubValor, eventosViaje.current.length > 0 && { color: C.rojo }]}>
+          {eventosViaje.current.length} infracc.
+        </Text>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <Text style={[styles.headerLabel, alertaTop && { color: C.rojo }]}>{alertaTop ? '⚠ alerta' : 'top speed'}</Text>
@@ -463,9 +487,20 @@ export default function Conducir() {
   const BotonesViaje = () => {
     if (modoRoaming) {
       return (
-        <TouchableOpacity style={styles.btnRoaming} onPress={detenerRoaming}>
-          <Text style={[styles.btnRoamingTexto, { color: C.marca }]}>🧭 Modo libre activo · Detener</Text>
-        </TouchableOpacity>
+        <View style={{ alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.max(20, limite - 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
+              <Text style={styles.btnAjusteTexto}>−5</Text>
+            </TouchableOpacity>
+            <Text style={{ color: C.gris, fontSize: 13 }}>límite: <Text style={{ color: C.blanco, fontWeight: '600' }}>{limite}</Text></Text>
+            <TouchableOpacity style={styles.btnAjuste} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { const n = Math.min(120, limite + 5); setLimite(n); AsyncStorage.setItem('limiteUltimo', String(n)); }}>
+              <Text style={styles.btnAjusteTexto}>+5</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.btnRoaming} onPress={detenerRoaming}>
+            <Text style={[styles.btnRoamingTexto, { color: C.marca }]}>🧭 Modo libre activo · Detener</Text>
+          </TouchableOpacity>
+        </View>
       );
     }
     if (viajeActivo) {
@@ -755,6 +790,7 @@ const styles = StyleSheet.create({
   divisor: { width: 1, height: '70%', backgroundColor: C.divider },
   headerLabel: { color: C.gris, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
   headerValor: { color: C.blanco, fontSize: 22, fontWeight: '500', marginTop: 2 },
+  headerSubValor: { color: C.gris, fontSize: 11, marginTop: 1 },
   limiteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 },
   limiteBadge: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.blanco, alignItems: 'center', justifyContent: 'center' },
   limiteBadgeTexto: { color: C.blanco, fontSize: 16, fontWeight: '600' },

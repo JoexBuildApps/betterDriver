@@ -1,5 +1,15 @@
 # betterDriver — Release Notes
 
+## v1.2.4 — Detección de trancón + Modo libre parejo con modo viaje
+
+### Nuevas funciones
+- El viaje ya no se cierra solo si quedas parado 3+ minutos en un trancón largo. La app ahora cuenta los ciclos de parar-arrancar-parar durante el viaje; si detecta 3 o más ciclos en los últimos 25 minutos (patrón típico de tráfico pesado), extiende el timeout de cierre automático a 15 minutos en vez de 3. Si es un stop aislado (llegaste a destino, por ejemplo), el timeout normal de 3 minutos se mantiene sin cambios.
+- Modo libre ahora tiene los mismos botones −5/+5 de ajuste de límite que modo viaje.
+- Contador de infracciones ("N infracc.") visible debajo de "puntos" en el header, tanto en portrait como landscape.
+
+### Bugfixes
+- `iniciarRoaming` nunca llamaba a `resetearViaje()` — si hacías un viaje y luego entrabas a Modo libre, arrastraba las infracciones y el top speed de la sesión anterior. Ya corregido.
+
 ## v1.2.3 — Fix zigzag de velocidad en crucero constante
 
 ### Bugfixes
@@ -13,6 +23,10 @@
 - UI: botón "Iniciar viaje" se quedaba sin texto visible al compartir fila con "Modo libre" — `paddingHorizontal` de 40 a 12, quitado `overflow: hidden`, agregado `alignItems`/`justifyContent: center`. El padding excesivo forzaba el texto a envolver en 2 líneas y `overflow: hidden` lo recortaba, dejándolo invisible.
 - GPS: nueva verificación de ventana larga (4s) además de la de tick-a-tick — compara la posición actual contra un ancla de hace 4 segundos para filtrar rachas de ruido GPS que por sí solas ya superan los 5m de `distanceInterval` y detonan una lectura que aparenta movimiento real (caso reportado: velocidad se quedó pegada en 17 km/h en un semáforo pese al fix anterior)
 - GPS: confirmado que −5/+5 y "Terminar viaje" responden bien en carretera tras el fix de remount de v1.2.0
+
+## v1.2.1 — Jump fixes 🦘
+
+Versión saltada en su momento al numerar el commit de v1.2.2 — no tuvo build ni cambios propios. Se documenta acá solo para que el historial de versiones no tenga un hueco sin explicación.
 
 ## v1.2.0 — GPS + UX
 
