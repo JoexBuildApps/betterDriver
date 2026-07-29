@@ -1,5 +1,10 @@
 # betterDriver — Release Notes
 
+## v1.2.7 — Mensajes de voz contextuales según infracciones
+
+### Bugfixes
+- Los mensajes aleatorios ("Vas bien") mezclaban frases genéricas con frases que afirman explícitamente "sin infracciones" o "historial limpio" — podían salir incluso después de que ya hubiera una infracción en el viaje. Separadas en dos categorías: `aleatorio` (genéricas, siempre válidas mientras vas bien) y `aleatorio_limpio` (solo se sortea si el viaje lleva 0 infracciones hasta ese momento).
+
 ## v1.2.6 — Círculo de límite unificado con los controles −5/+5
 
 ### UI

@@ -31,6 +31,7 @@
 - [x] Sesgo de seguridad +2 km/h en velocidad mostrada (GPS suele leer por debajo de la real)
 - [x] Contador de infracciones con mismo estilo que puntos + badge de límite con pulso animado + unificado texto "límite de zona" en portrait y landscape
 - [x] Eliminada duplicación del número de límite (círculo grande arriba + texto "límite: 53" abajo) — el círculo solo se ve antes de arrancar; con viaje activo o Modo libre, se mueve al centro de los botones −5/+5
+- [x] Mensajes de voz contextuales: frases que afirman "sin infracciones" separadas en categoría `aleatorio_limpio`, solo se sortean con 0 infracciones en el viaje
 - [ ] Voces de abuela colombiana (ElevenLabs)
 - [ ] Companions: abuela, monstruo, tortuga
 - [ ] Background mode (GPS con Waze activo)

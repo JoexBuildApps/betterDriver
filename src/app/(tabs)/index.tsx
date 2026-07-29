@@ -433,7 +433,9 @@ export default function Conducir() {
               if (!timerMensajeAleatorio.current && !alertaActiva.current) {
                 const delay = (180 + Math.random() * 120) * 1000;
                 timerMensajeAleatorio.current = setTimeout(() => {
-                  hablar(mensajeAleatorio('aleatorio'));
+                  const sinInfracciones = eventosViaje.current.length === 0;
+                  const categoria = (sinInfracciones && Math.random() < 0.35) ? 'aleatorio_limpio' : 'aleatorio';
+                  hablar(mensajeAleatorio(categoria));
                   timerMensajeAleatorio.current = null;
                 }, delay);
               }
