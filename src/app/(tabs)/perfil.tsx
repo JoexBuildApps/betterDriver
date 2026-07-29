@@ -268,6 +268,15 @@ export default function Perfil() {
         </TouchableOpacity>
       </View>
 
+      {/* Garage */}
+      <TouchableOpacity style={styles.garageCard} onPress={() => router.push('/garage')}>
+        <View>
+          <Text style={styles.garageTitulo}>🔧 Garage</Text>
+          <Text style={styles.garageDesc}>Seguro, aceite y mantenimientos</Text>
+        </View>
+        <Text style={styles.garageFlecha}>›</Text>
+      </TouchableOpacity>
+
       {/* Preferencias */}
       <View style={styles.seccion}>
         <Text style={styles.seccionTitulo}>Preferencias</Text>
@@ -421,6 +430,14 @@ const styles = StyleSheet.create({
   eliminar: { color: C.rojo, fontSize: 16, padding: 8 },
   btnAgregar: { borderWidth: 1, borderColor: 'rgba(46,230,197,0.4)', borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
   btnAgregarTexto: { color: C.marca, fontSize: 15 },
+  garageCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: 'rgba(46,230,197,0.08)', borderRadius: 16, padding: 16, marginBottom: 16,
+    borderWidth: 1, borderColor: 'rgba(46,230,197,0.2)',
+  },
+  garageTitulo: { color: C.blanco, fontSize: 16, fontWeight: '500' },
+  garageDesc: { color: C.gris, fontSize: 12, marginTop: 2 },
+  garageFlecha: { color: C.marca, fontSize: 22 },
   prefLabel: { color: C.gris, fontSize: 14, marginBottom: 10 },
   unidadBtns: { flexDirection: 'row', gap: 12 },
   unidadBtn: { flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: C.divider, alignItems: 'center' },

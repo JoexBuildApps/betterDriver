@@ -34,6 +34,8 @@ export default function RootLayout() {
       <Stack.Screen name="eula" />
       <Stack.Screen name="vehiculo" />
       <Stack.Screen name="agregar_vehiculo" />
+      <Stack.Screen name="garage" />
+      <Stack.Screen name="garage_vehiculo" />
     </Stack>
   );
 }
