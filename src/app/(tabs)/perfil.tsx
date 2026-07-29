@@ -11,6 +11,7 @@ import { getViajes, Viaje } from '../../utils/viajes';
 import { calcularScore, calcularEstrellas } from '../../utils/puntos';
 import { CONFIG } from '../../utils/config';
 import { C } from '../../utils/colors';
+import { fechaISO, partesFecha, formatearFechaCorta, programarAvisoLicencia } from '../../utils/garage';
 
 export default function Perfil() {
   const insets = useSafeAreaInsets();
@@ -29,6 +30,10 @@ export default function Perfil() {
   const [tipoVEdit, setTipoVEdit] = useState('🚗 Automóvil');
   const [nombreEdit, setNombreEdit] = useState('');
   const [ciudadEdit, setCiudadEdit] = useState('');
+  const [licDia, setLicDia] = useState('');
+  const [licMes, setLicMes] = useState('');
+  const [licAnio, setLicAnio] = useState('');
+  const [guardandoLicencia, setGuardandoLicencia] = useState(false);
 
   useEffect(() => {
     if (!modoDebug) return;
@@ -42,7 +47,14 @@ export default function Perfil() {
 
   const cargarDatos = async () => {
     getViajes().then(setViajes);
-    AsyncStorage.getItem('perfil').then(p => { if (p) setPerfil(JSON.parse(p)); });
+    AsyncStorage.getItem('perfil').then(p => {
+      if (p) {
+        const parsed = JSON.parse(p);
+        setPerfil(parsed);
+        const partes = partesFecha(parsed.licenciaFecha);
+        setLicDia(partes.dia); setLicMes(partes.mes); setLicAnio(partes.anio);
+      }
+    });
     AsyncStorage.getItem('vehiculos').then(v => { if (v) setVehiculos(JSON.parse(v)); });
     AsyncStorage.getItem('vehiculoActivo').then(v => { if (v) setVehiculoActivo(JSON.parse(v)); });
     try {
@@ -69,6 +81,24 @@ export default function Perfil() {
       parsed.unidad = u;
       await AsyncStorage.setItem('perfil', JSON.stringify(parsed));
       setPerfil(parsed);
+    }
+  };
+
+  const guardarLicencia = async () => {
+    if ((licDia || licMes || licAnio)) {
+      const iso = fechaISO(licDia, licMes, licAnio);
+      if (!iso) {
+        Alert.alert('Fecha inválida', 'Revisa el día, mes y año.');
+        return;
+      }
+      setGuardandoLicencia(true);
+      const perfilActual = await AsyncStorage.getItem('perfil');
+      const parsed = perfilActual ? JSON.parse(perfilActual) : {};
+      parsed.licenciaFecha = iso;
+      await AsyncStorage.setItem('perfil', JSON.stringify(parsed));
+      setPerfil(parsed);
+      await programarAvisoLicencia(iso);
+      setGuardandoLicencia(false);
     }
   };
 
@@ -297,6 +327,23 @@ export default function Perfil() {
         </View>
       </View>
 
+      {/* Licencia de conducción */}
+      <View style={styles.seccion}>
+        <Text style={styles.seccionTitulo}>Licencia de conducción</Text>
+        <Text style={styles.prefLabel}>Te avisamos 7 días antes de que venza</Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+          <TextInput style={[styles.input, { flex: 1, textAlign: 'center' }]} placeholder="DD" placeholderTextColor={C.gris} value={licDia} onChangeText={setLicDia} keyboardType="numeric" maxLength={2} />
+          <TextInput style={[styles.input, { flex: 1, textAlign: 'center' }]} placeholder="MM" placeholderTextColor={C.gris} value={licMes} onChangeText={setLicMes} keyboardType="numeric" maxLength={2} />
+          <TextInput style={[styles.input, { flex: 1.4, textAlign: 'center' }]} placeholder="AAAA" placeholderTextColor={C.gris} value={licAnio} onChangeText={setLicAnio} keyboardType="numeric" maxLength={4} />
+        </View>
+        {perfil?.licenciaFecha && (
+          <Text style={styles.licenciaGuardada}>Guardada: vence el {formatearFechaCorta(perfil.licenciaFecha)}</Text>
+        )}
+        <TouchableOpacity style={styles.btnGuardar} onPress={guardarLicencia} disabled={guardandoLicencia}>
+          <Text style={styles.btnGuardarTexto}>{guardandoLicencia ? 'Guardando...' : 'Guardar'}</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Datos */}
       <View style={styles.seccion}>
         <Text style={styles.seccionTitulo}>Mis datos</Text>
@@ -445,6 +492,7 @@ const styles = StyleSheet.create({
   unidadBtnTexto: { color: C.gris, fontSize: 16, fontWeight: '500' },
   unidadBtnTextoActivo: { color: C.marca },
   acercaTexto: { color: C.gris, fontSize: 14, lineHeight: 22, marginBottom: 12 },
+  licenciaGuardada: { color: C.marca, fontSize: 12, marginBottom: 10 },
   btnDatos: { borderWidth: 1, borderColor: C.divider, borderRadius: 12, padding: 14 },
   btnDatosTexto: { color: C.blanco, fontSize: 14, fontWeight: '500', marginBottom: 2 },
   btnDatosDesc: { color: C.gris, fontSize: 12 },

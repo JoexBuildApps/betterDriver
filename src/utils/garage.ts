@@ -84,7 +84,11 @@ export function estadoGarage(garage?: GarageInfo): { texto: string; nivel: 'ok' 
   return { texto: alertas.join(' · '), nivel };
 }
 
-// --- Notificaciones locales ---
+export function licenciaProximaAVencer(fechaISOStr?: string): boolean {
+  if (!fechaISOStr) return false;
+  const d = diasHasta(fechaISOStr);
+  return d <= DIAS_AVISO;
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -117,14 +121,14 @@ export async function pedirPermisoNotificaciones(): Promise<boolean> {
   return final === 'granted';
 }
 
-// identifier estable por vehículo+tipo, para poder reemplazar sin duplicar al editar
-function idNotificacion(vehiculoId: string, tipo: 'seguro' | 'aceite'): string {
+// identifier estable por vehículo+tipo (o "perfil" para la licencia), para poder reemplazar sin duplicar al editar
+function idNotificacion(vehiculoId: string, tipo: 'seguro' | 'aceite' | 'licencia'): string {
   return `garage-${vehiculoId}-${tipo}`;
 }
 
 export async function programarAvisoGarage(
   vehiculoId: string,
-  tipo: 'seguro' | 'aceite',
+  tipo: 'seguro' | 'aceite' | 'licencia',
   fechaVencimientoISO: string | null,
   tituloVehiculo: string
 ) {
@@ -142,7 +146,9 @@ export async function programarAvisoGarage(
 
   const cuerpo = tipo === 'seguro'
     ? `El seguro de tu ${tituloVehiculo} vence en ${DIAS_AVISO} días`
-    : `Se acerca el cambio de aceite de tu ${tituloVehiculo} (en ${DIAS_AVISO} días)`;
+    : tipo === 'aceite'
+    ? `Se acerca el cambio de aceite de tu ${tituloVehiculo} (en ${DIAS_AVISO} días)`
+    : `Tu licencia de conducción vence en ${DIAS_AVISO} días`;
 
   try {
     await Notifications.scheduleNotificationAsync({
@@ -155,6 +161,12 @@ export async function programarAvisoGarage(
   } catch (e) {
     // Si falla el permiso o el trigger, no bloquea el guardado de los datos del garage
   }
+}
+
+export async function programarAvisoLicencia(fechaVencimientoISO: string | null) {
+  const ok = await pedirPermisoNotificaciones();
+  if (!ok) return;
+  await programarAvisoGarage('perfil', 'licencia', fechaVencimientoISO, '');
 }
 
 export async function reprogramarAvisosVehiculo(vehiculoId: string, tituloVehiculo: string, garage: GarageInfo) {

@@ -1,5 +1,20 @@
 # betterDriver — Release Notes
 
+## v1.3.1 — Chips de servicios + Licencia de conducción + Alerta en el tab
+
+### Nuevas funciones
+- Garage: 12 chips de servicios comunes (filtro de aire, filtro de cabina, pastillas de freno, líquido de frenos, líquido refrigerante, correa de distribución, batería, llantas, alineación y balanceo, bujías, amortiguadores, revisión técnico-mecánica) — tocas uno y llena el campo, o escribes el tuyo si no está en la lista.
+- Perfil: nueva sección "Licencia de conducción" — fecha de vencimiento con aviso local 7 días antes, mismo mecanismo de notificación que seguro/aceite pero a nivel de persona, no de vehículo.
+- Punto rojo de alerta sobre el ícono de "Mi perfil" en la barra de tabs cuando algún vehículo (seguro o aceite) o la licencia de conducción están a 7 días o menos de vencer, o ya vencidos. Se revisa cada vez que la sección de tabs recupera el foco.
+
+## v1.3.0 — Modo Garage
+
+### Nuevas funciones
+- Nueva sección Garage, accesible desde una tarjeta en Perfil ("🔧 Garage"), con lista de todos los vehículos ya agregados y un pill de estado (al día / próximo a vencer / vencido / sin datos) por cada uno.
+- Ficha por vehículo: seguro (fecha de vencimiento), cambio de aceite (fecha del último cambio + intervalo en meses, con la próxima fecha calculada automáticamente), kilometraje referencial, y una lista libre de otros servicios (fecha + descripción).
+- Notificaciones locales (`expo-notifications`) 7 días antes del vencimiento de seguro o cambio de aceite, con identifier estable por vehículo+tipo para no duplicar avisos al editar.
+- 100% local (AsyncStorage), no requiere Supabase.
+
 ## v1.2.7 — Mensajes de voz contextuales según infracciones
 
 ### Bugfixes

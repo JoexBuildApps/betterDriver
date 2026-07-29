@@ -9,6 +9,21 @@ import {
   proximoAceite, reprogramarAvisosVehiculo,
 } from '../utils/garage';
 
+const SERVICIOS_COMUNES = [
+  'Filtro de aire',
+  'Filtro de cabina',
+  'Pastillas de freno',
+  'Líquido de frenos',
+  'Líquido refrigerante',
+  'Correa de distribución',
+  'Batería',
+  'Llantas',
+  'Alineación y balanceo',
+  'Bujías',
+  'Amortiguadores',
+  'Revisión técnico-mecánica',
+];
+
 function CampoFecha({ label, dia, mes, anio, onDia, onMes, onAnio }: {
   label: string; dia: string; mes: string; anio: string;
   onDia: (v: string) => void; onMes: (v: string) => void; onAnio: (v: string) => void;
@@ -176,6 +191,18 @@ export default function GarageVehiculo() {
             </View>
           ))}
           <View style={{ marginTop: 12, gap: 8 }}>
+            <Text style={styles.campoLabel}>Toca uno o escribe el tuyo abajo</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {SERVICIOS_COMUNES.map(s => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.chip, nuevoServicioTexto === s && styles.chipActivo]}
+                  onPress={() => setNuevoServicioTexto(s)}
+                >
+                  <Text style={[styles.chipTexto, nuevoServicioTexto === s && styles.chipTextoActivo]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <TextInput
               style={styles.input}
               value={nuevoServicioTexto}
@@ -209,6 +236,10 @@ const styles = StyleSheet.create({
   input: { backgroundColor: C.superficie2, color: C.blanco, fontSize: 15, padding: 12, borderRadius: 10 },
   proximaFecha: { color: C.marca, fontSize: 12, marginTop: 10 },
   sinServicios: { color: C.gris, fontSize: 13, fontStyle: 'italic' },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: C.divider },
+  chipActivo: { borderColor: C.marca, backgroundColor: 'rgba(46,230,197,0.15)' },
+  chipTexto: { color: C.gris, fontSize: 12 },
+  chipTextoActivo: { color: C.marca },
   servicioFila: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: C.divider },
   servicioFecha: { color: C.gris, fontSize: 11 },
   servicioTexto: { color: C.blanco, fontSize: 14, marginTop: 2 },

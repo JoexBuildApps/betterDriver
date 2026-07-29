@@ -36,9 +36,18 @@
 - [ ] Companions: abuela, monstruo, tortuga
 - [ ] Background mode (GPS con Waze activo)
 
+## v1.3 — Modo Garage ✅
+- [x] Sección Garage en Perfil: lista de vehículos con pill de estado (al día / próximo a vencer / vencido)
+- [x] Ficha por vehículo: seguro (fecha), cambio de aceite (fecha + intervalo en meses, próxima fecha calculada), km referencial, servicios libres (fecha + descripción)
+- [x] Notificaciones locales 7 días antes de vencimiento (seguro y aceite), sin duplicar al editar
+- [x] 12 chips de servicios comunes para no escribir a mano cada vez
+- [x] Licencia de conducción en Perfil, con el mismo mecanismo de aviso 7 días antes
+- [x] Punto rojo de alerta en el ícono de "Mi perfil" cuando algo está por vencer o vencido
+
 ## v2.0 — Portugués + Social familiar (Brasil)
 - [ ] Portugués como segundo idioma (UI, voces, mensajes aleatorios)
 - [ ] Grupo cerrado por invitación (ej. padre + hijos comparten un carro) — comparte score/infracciones/segundos en exceso agregados, nunca GPS ni ruta — requiere Supabase
+- [ ] Voces de abuela colombiana vía ElevenLabs (movida de v1.2, aún por evaluar)
 
 ## v3.0 — Mundial
 - [ ] Inglés, francés y otros idiomas
