@@ -43,6 +43,8 @@
 - [x] 12 chips de servicios comunes para no escribir a mano cada vez
 - [x] Licencia de conducción en Perfil, con el mismo mecanismo de aviso 7 días antes
 - [x] Punto rojo de alerta en el ícono de "Mi perfil" cuando algo está por vencer o vencido
+- [x] Nueva tabla de estrellas: segundos de exceso por minuto de viaje (en vez de % del viaje total) + ajuste según promedio personal de los últimos 10 viajes
+- [x] Ocultado "puntos" del header en pantalla (portrait/landscape, viaje/modo libre) — el cálculo sigue corriendo internamente
 
 ## v2.0 — Portugués + Social familiar (Brasil)
 - [ ] Portugués como segundo idioma (UI, voces, mensajes aleatorios)

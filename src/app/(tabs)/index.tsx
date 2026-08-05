@@ -480,15 +480,9 @@ export default function Conducir() {
 
   const HeaderStats = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 8 }}>
-      <View style={{ flexDirection: 'row', gap: 20 }}>
-        <View>
-          <Text style={styles.headerLabel}>puntos</Text>
-          <Text style={[styles.headerValor, { color: getColorPuntos() }]}>{puntosActuales}</Text>
-        </View>
-        <View>
-          <Text style={styles.headerLabel}>infracc.</Text>
-          <Text style={[styles.headerValor, eventosViaje.current.length > 0 && { color: C.rojo }]}>{eventosViaje.current.length}</Text>
-        </View>
+      <View>
+        <Text style={styles.headerLabel}>infracc.</Text>
+        <Text style={[styles.headerValor, eventosViaje.current.length > 0 && { color: C.rojo }]}>{eventosViaje.current.length}</Text>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <Text style={[styles.headerLabel, alertaTop && { color: C.rojo }]}>{alertaTop ? '⚠ alerta' : 'top speed'}</Text>

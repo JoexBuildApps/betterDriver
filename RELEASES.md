@@ -1,5 +1,15 @@
 # betterDriver — Release Notes
 
+## v1.3.2 — Escala de estrellas más sensible + puntos oculto en pantalla
+
+### Cambios de comportamiento
+- Nueva tabla de estrellas: en vez de basarse en el % del tiempo total del viaje en exceso (que diluía casi cualquier infracción en viajes largos, dejando a casi todos entre 4-5 estrellas siempre), ahora se basa en segundos de exceso por minuto de viaje — no depende de qué tan largo sea el viaje.
+- Se suma un ajuste por el promedio personal de los últimos 10 viajes: si el viaje actual estuvo claramente mejor que tu promedio reciente, sube una estrella; si estuvo claramente peor, baja una. La escala responde a tu propio patrón de conducción, no solo a un número fijo.
+- El promedio se calcula con los viajes que ya tienes guardados en el teléfono — no arranca de cero.
+
+### UI
+- Ya no se muestra "puntos" en el header (portrait, landscape, viaje y modo libre) — el cálculo se sigue haciendo internamente (usado en la lógica de mensajes), solo se dejó de pintar en pantalla. Ahora el header solo muestra "infracc." y "top speed".
+
 ## v1.3.1 — Chips de servicios + Licencia de conducción + Alerta en el tab
 
 ### Nuevas funciones

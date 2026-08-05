@@ -64,8 +64,15 @@ export async function guardarViaje(viaje: {
   destinoBarrio?: string;
   segundosEnExceso: number;
 }): Promise<void> {
+  const existing = await AsyncStorage.getItem('viajes');
+  const viajesPrevios: Viaje[] = existing ? JSON.parse(existing) : [];
+  const ultimos10 = viajesPrevios.slice(0, 10);
+  const promedioSegundosExceso10 = ultimos10.length > 0
+    ? ultimos10.reduce((a, v) => a + (v.segundosEnExceso || 0), 0) / ultimos10.length
+    : null;
+
   const resumen = calcularResumen(viaje.duracion, viaje.eventos.length, viaje.segundosEnExceso);
-  const estrellas = calcularEstrellas(viaje.duracion, viaje.segundosEnExceso);
+  const estrellas = calcularEstrellas(viaje.duracion, viaje.segundosEnExceso, promedioSegundosExceso10);
   const score = calcularScore(estrellas);
 
   const viajeCompleto: Viaje = {
@@ -93,10 +100,8 @@ export async function guardarViaje(viaje: {
     semana: getSemana(viaje.fecha),
   };
 
-  const existing = await AsyncStorage.getItem('viajes');
-  const viajes: Viaje[] = existing ? JSON.parse(existing) : [];
-  viajes.unshift(viajeCompleto);
-  await AsyncStorage.setItem('viajes', JSON.stringify(viajes.slice(0, 100)));
+  viajesPrevios.unshift(viajeCompleto);
+  await AsyncStorage.setItem('viajes', JSON.stringify(viajesPrevios.slice(0, 100)));
 }
 
 export async function getViajes(): Promise<Viaje[]> {

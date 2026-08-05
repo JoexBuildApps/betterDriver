@@ -35,14 +35,37 @@ export function calcularResumen(
   };
 }
 
-export function calcularEstrellas(duracionSegundos: number, segundosEnExceso: number): number {
+// Tabla de estrellas basada en segundos de exceso POR MINUTO de viaje (no % del viaje total).
+// El % del viaje total diluye demasiado los segundos de exceso en viajes largos (29s en un
+// viaje de 30min es solo 1.6%, cayendo siempre en el rango de 4-5 estrellas sin importar qué
+// tan seguido se repita). Segundos/minuto no depende de la duración del viaje.
+//
+// Además se ajusta según el promedio personal de los últimos 10 viajes: si este viaje estuvo
+// claramente mejor que tu promedio reciente, sube una estrella; si estuvo claramente peor, baja
+// una. Esto hace que la escala responda a tu propio patrón de conducción, no solo a un número fijo.
+export function calcularEstrellas(
+  duracionSegundos: number,
+  segundosEnExceso: number,
+  promedioSegundosExceso10?: number | null
+): number {
   if (duracionSegundos === 0) return 3;
   if (segundosEnExceso === 0) return 5;
-  const porcentaje = (segundosEnExceso / duracionSegundos) * 100;
-  if (porcentaje <= 5) return 4;
-  if (porcentaje <= 15) return 3;
-  if (porcentaje <= 35) return 2;
-  return 1;
+
+  const minutos = duracionSegundos / 60;
+  const segsPorMinuto = segundosEnExceso / minutos;
+
+  let estrellas: number;
+  if (segsPorMinuto <= 0.3) estrellas = 4;
+  else if (segsPorMinuto <= 1) estrellas = 3;
+  else if (segsPorMinuto <= 2.5) estrellas = 2;
+  else estrellas = 1;
+
+  if (promedioSegundosExceso10 && promedioSegundosExceso10 > 0) {
+    if (segundosEnExceso < promedioSegundosExceso10 * 0.7) estrellas = Math.min(5, estrellas + 1);
+    else if (segundosEnExceso > promedioSegundosExceso10 * 1.3) estrellas = Math.max(1, estrellas - 1);
+  }
+
+  return estrellas;
 }
 
 export function calcularScore(estrellas: number): string {
