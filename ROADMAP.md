@@ -47,6 +47,7 @@
 - [x] Ocultado "puntos" del header en pantalla (portrait/landscape, viaje/modo libre) — el cálculo sigue corriendo internamente
 - [x] Intersecciones reales en origen/destino (ej. "Cl 53 con Cr 24") aprovechando el grid colombiano (Calle cruza con Carrera, Diagonal con Transversal) — búsqueda en 4 direcciones cardinales, sin depender del heading del GPS
 - [x] Abreviaturas de vías: Carrera → Cr, Calle → Cl, Diagonal → Dig, Transversal → Tv
+- [x] Mensajes de voz por tier proyectado: 5 pools (1 a 5 estrellas, 8 frases c/u) según tramos típicos de Bogotá (20/40/60/70 min) + promedio de los últimos 10 viajes, reemplazando aleatorio/aleatorio_limpio
 
 ## v2.0 — Portugués + Social familiar (Brasil)
 - [ ] Portugués como segundo idioma (UI, voces, mensajes aleatorios)

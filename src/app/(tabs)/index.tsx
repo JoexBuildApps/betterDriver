@@ -8,7 +8,8 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Accelerometer } from 'expo-sensors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { guardarViaje, Evento, PuntoGPS, abreviarVia } from '../../utils/viajes';
+import { guardarViaje, Evento, PuntoGPS, abreviarVia, getViajes } from '../../utils/viajes';
+import { calcularEstrellas } from '../../utils/puntos';
 import { mensajeAleatorio } from '../../utils/mensajes';
 import { CONFIG } from '../../utils/config';
 import { C } from '../../utils/colors';
@@ -22,6 +23,7 @@ const TOLERANCIA = 1.10;
 const RUIDO_GPS_KMH = 15; // lecturas GPS <= este umbral se tratan como ruido/detenido, no como movimiento real
 const SESGO_SEGURIDAD_KMH = 2; // el GPS suele leer un poco por debajo de la velocidad real; mejor mostrar de más que de menos
 const VENTANA_ANCLA_MS = 4000; // ventana larga para promediar desplazamiento y filtrar ruido puntual del GPS
+const TRAMOS_TIPICOS_MIN = [20, 40, 60, 70]; // duraciones típicas de un trayecto en Bogotá, usadas para proyectar el tier en vivo
 const LIMITES_OPCIONES = [48, 58, 68, 78];
 
 function Velocimetro({ velocidad, limite, size = 260, unidadLabel = 'km/h' }: { velocidad: number; limite: number; size?: number; unidadLabel?: string }) {
@@ -170,6 +172,7 @@ export default function Conducir() {
   const alertaActiva = useRef(false);
   const timerParado = useRef<any>(null);
   const ciclosParada = useRef<number[]>([]);
+  const promedioExceso10 = useRef<number | null>(null);
   const ultimoKmhPositivo = useRef(false);
   const timerCountdown = useRef<any>(null);
   const timerMensajeAleatorio = useRef<any>(null);
@@ -320,6 +323,13 @@ export default function Conducir() {
     ultimoKmhPositivo.current = false;
     setTopSpeed(0);
     inicioViaje.current = Date.now();
+    promedioExceso10.current = null;
+    getViajes().then(viajes => {
+      const ultimos10 = viajes.slice(0, 10);
+      promedioExceso10.current = ultimos10.length > 0
+        ? ultimos10.reduce((a, v) => a + (v.segundosEnExceso || 0), 0) / ultimos10.length
+        : null;
+    }).catch(() => {});
   };
 
   const terminarViaje = async () => {
@@ -487,8 +497,14 @@ export default function Conducir() {
               if (!timerMensajeAleatorio.current && !alertaActiva.current) {
                 const delay = (180 + Math.random() * 120) * 1000;
                 timerMensajeAleatorio.current = setTimeout(() => {
-                  const sinInfracciones = eventosViaje.current.length === 0;
-                  const categoria = (sinInfracciones && Math.random() < 0.35) ? 'aleatorio_limpio' : 'aleatorio';
+                  const minutosTranscurridos = (Date.now() - inicioViaje.current) / 60000;
+                  const tramoProyectado = TRAMOS_TIPICOS_MIN.find(m => m >= minutosTranscurridos) ?? minutosTranscurridos;
+                  const tier = calcularEstrellas(
+                    Math.max(tramoProyectado, 1) * 60,
+                    segundosEnExceso.current,
+                    promedioExceso10.current
+                  );
+                  const categoria = (`tier${tier}` as 'tier1' | 'tier2' | 'tier3' | 'tier4' | 'tier5');
                   hablar(mensajeAleatorio(categoria));
                   timerMensajeAleatorio.current = null;
                 }, delay);

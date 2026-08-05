@@ -1,5 +1,13 @@
 # betterDriver — Release Notes
 
+## v1.3.4 — Mensajes de voz por tier proyectado
+
+### Nuevas funciones
+- Reemplazado el sistema de mensajes "vas bien" (categorías `aleatorio`/`aleatorio_limpio`) por 5 pools nuevos, uno por cada tier de estrellas (1 a 5), con 8 frases cada uno.
+- Cada vez que toca sonar un mensaje, se proyecta el tier usando los tramos típicos de un trayecto en Bogotá (20, 40, 60, 70 minutos): se toma el tramo típico más cercano hacia arriba según los minutos transcurridos (o la duración real si el viaje ya superó los 70 min), se calcula la tasa de segundos en exceso sobre esos minutos proyectados, y se aplica la misma fórmula de estrellas de v1.3.2 (incluyendo el ajuste por el promedio de los últimos 10 viajes) para saber en qué tier vas ahora mismo.
+- Esto evita el efecto de los primeros minutos del viaje, donde pocos segundos de exceso se ven desproporcionadamente mal solo porque ha pasado poco tiempo — y le da sentido real a la mecánica de "si el resto del viaje va limpio, el tier mejora solo".
+- Los mensajes de tier 3 y tier ≤2 mencionan explícitamente esa mecánica (ej. "si el resto del viaje va limpio, esto sube solo").
+
 ## v1.3.3 — Abreviaturas de vías + intersecciones reales en origen/destino
 
 ### Nuevas funciones
