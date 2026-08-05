@@ -45,6 +45,8 @@
 - [x] Punto rojo de alerta en el ícono de "Mi perfil" cuando algo está por vencer o vencido
 - [x] Nueva tabla de estrellas: segundos de exceso por minuto de viaje (en vez de % del viaje total) + ajuste según promedio personal de los últimos 10 viajes
 - [x] Ocultado "puntos" del header en pantalla (portrait/landscape, viaje/modo libre) — el cálculo sigue corriendo internamente
+- [x] Intersecciones reales en origen/destino (ej. "Cl 53 con Cr 24") aprovechando el grid colombiano (Calle cruza con Carrera, Diagonal con Transversal) — búsqueda en 4 direcciones cardinales, sin depender del heading del GPS
+- [x] Abreviaturas de vías: Carrera → Cr, Calle → Cl, Diagonal → Dig, Transversal → Tv
 
 ## v2.0 — Portugués + Social familiar (Brasil)
 - [ ] Portugués como segundo idioma (UI, voces, mensajes aleatorios)

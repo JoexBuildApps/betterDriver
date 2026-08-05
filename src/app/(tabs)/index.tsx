@@ -8,7 +8,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Accelerometer } from 'expo-sensors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { guardarViaje, Evento, PuntoGPS } from '../../utils/viajes';
+import { guardarViaje, Evento, PuntoGPS, abreviarVia } from '../../utils/viajes';
 import { mensajeAleatorio } from '../../utils/mensajes';
 import { CONFIG } from '../../utils/config';
 import { C } from '../../utils/colors';
@@ -60,6 +60,64 @@ function Velocimetro({ velocidad, limite, size = 260, unidadLabel = 'km/h' }: { 
       <SvgText x={cx} y={cy + size * 0.22} textAnchor="middle" fill={C.gris} fontSize={size * 0.08} letterSpacing={2}>{unidadLabel}</SvgText>
     </Svg>
   );
+}
+
+// Colombia: si vas por una Calle, la vía que cruza siempre es una Carrera (y viceversa;
+// Diagonal corre paralelo a Calle, Transversal paralelo a Carrera). No necesitamos saber
+// hacia dónde vas (el heading del GPS es poco confiable justo al parar/arrancar) — basta con
+// buscar en las 4 direcciones cardinales fijas hasta encontrar una vía del tipo contrario.
+type FamiliaVia = 'calle' | 'carrera' | null;
+
+function familiaDe(nombre?: string): FamiliaVia {
+  if (!nombre) return null;
+  if (/\b(Calle|Cl|Diagonal|Dig)\b/i.test(nombre)) return 'calle';
+  if (/\b(Carrera|Cr|Transversal|Tv)\b/i.test(nombre)) return 'carrera';
+  return null;
+}
+
+function destinoDesde(lat: number, lon: number, bearingGrados: number, distanciaM: number) {
+  const R = 6371000;
+  const brng = bearingGrados * Math.PI / 180;
+  const lat1 = lat * Math.PI / 180;
+  const lon1 = lon * Math.PI / 180;
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(distanciaM / R) + Math.cos(lat1) * Math.sin(distanciaM / R) * Math.cos(brng));
+  const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(distanciaM / R) * Math.cos(lat1), Math.cos(distanciaM / R) - Math.sin(lat1) * Math.sin(lat2));
+  return { lat: lat2 * 180 / Math.PI, lon: lon2 * 180 / Math.PI };
+}
+
+// Busca la vía base en el punto dado, y si es Calle/Carrera/Diagonal/Transversal, busca una
+// vía del tipo contrario a ~180m en las 4 direcciones cardinales para armar el cruce.
+async function capturarInterseccion(lat: number, lon: number): Promise<string | undefined> {
+  try {
+    const base = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+    if (base.length === 0) return undefined;
+    const r0 = base[0];
+    const calleBase = abreviarVia(r0.street || r0.district || r0.subregion || r0.city || undefined);
+    if (!calleBase) return undefined;
+
+    const familiaBase = familiaDe(calleBase);
+    if (!familiaBase) return calleBase;
+
+    const distancia = 180;
+    const puntos = [0, 90, 180, 270].map(rumbo => destinoDesde(lat, lon, rumbo, distancia));
+
+    const resultados = await Promise.all(
+      puntos.map(p =>
+        Location.reverseGeocodeAsync({ latitude: p.lat, longitude: p.lon }).catch(() => [])
+      )
+    );
+
+    for (const res of resultados) {
+      if (!res || res.length === 0) continue;
+      const nombre = abreviarVia(res[0].street || undefined);
+      if (nombre && familiaDe(nombre) === (familiaBase === 'calle' ? 'carrera' : 'calle')) {
+        return `${calleBase} con ${nombre}`;
+      }
+    }
+    return calleBase;
+  } catch (e) {
+    return undefined;
+  }
 }
 
 export default function Conducir() {
@@ -216,14 +274,11 @@ export default function Conducir() {
     setMostrarLimite(false);
     resetearViaje();
     setViajeActivo(true);
-    // Capturar origen
+    // Capturar origen (con intersección: busca la vía del tipo contrario cerca)
     Location.getCurrentPositionAsync({}).then(loc => {
-      Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }).then(res => {
-        if (res.length > 0) {
-          const r = res[0];
-          origenRef.current = r.street || r.district || r.subregion || r.city || undefined;
-        }
-      }).catch(() => {});
+      capturarInterseccion(loc.coords.latitude, loc.coords.longitude).then(resultado => {
+        origenRef.current = resultado;
+      });
     }).catch(() => {});
   };
 
@@ -278,8 +333,7 @@ export default function Conducir() {
     let destinoBarrio: string | undefined;
     try {
       const loc = await Location.getCurrentPositionAsync({});
-      const res = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-      if (res.length > 0) { const r = res[0]; destinoBarrio = r.street || r.district || r.subregion || r.city || undefined; }
+      destinoBarrio = await capturarInterseccion(loc.coords.latitude, loc.coords.longitude);
     } catch (e) {}
     const distanciaKm = Math.round(distanciaM.current / 100) / 10;
     const vActivo = await AsyncStorage.getItem('vehiculoActivo');

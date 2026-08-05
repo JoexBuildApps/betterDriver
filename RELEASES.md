@@ -1,5 +1,11 @@
 # betterDriver — Release Notes
 
+## v1.3.3 — Abreviaturas de vías + intersecciones reales en origen/destino
+
+### Nuevas funciones
+- Origen y destino del viaje ahora intentan armar la intersección real (ej. "Cl 53 con Cr 24") en vez de solo la calle más cercana. Aprovecha que en el grid colombiano una Calle siempre cruza con una Carrera (y Diagonal con Transversal): busca en las 4 direcciones cardinales (~180m) hasta encontrar una vía del tipo contrario, sin depender del heading del GPS (poco confiable justo al arrancar/parar, que es cuando se captura). Si no encuentra ninguna del tipo contrario cerca, se queda con la calle base sola, como antes.
+- Los tipos de vía se abrevian: Carrera → Cr, Calle → Cl, Diagonal → Dig, Transversal → Tv.
+
 ## v1.3.2 — Escala de estrellas más sensible + puntos oculto en pantalla
 
 ### Cambios de comportamiento

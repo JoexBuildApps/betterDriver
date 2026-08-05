@@ -126,6 +126,16 @@ export function formatearFecha(timestamp: number): string {
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+// Abrevia los tipos de vía comunes en Colombia (Carrera, Calle, Diagonal, Transversal)
+export function abreviarVia(nombre?: string): string | undefined {
+  if (!nombre) return nombre;
+  return nombre
+    .replace(/\bCarrera\b/gi, 'Cr')
+    .replace(/\bCalle\b/gi, 'Cl')
+    .replace(/\bDiagonal\b/gi, 'Dig')
+    .replace(/\bTransversal\b/gi, 'Tv');
+}
+
 export function formatearDuracion(segundos: number): string {
   const m = Math.floor(segundos / 60);
   const s = segundos % 60;
